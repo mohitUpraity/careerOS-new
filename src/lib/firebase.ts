@@ -1,5 +1,16 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile,
+  signOut, 
+  onAuthStateChanged, 
+  User, 
+  Auth 
+} from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported, Analytics } from 'firebase/analytics';
@@ -43,6 +54,29 @@ export async function signInWithGoogle(): Promise<User | null> {
     return result.user;
   } catch (error) {
     console.error('Firebase Google Sign-In Error:', error);
+    throw error;
+  }
+}
+
+export async function signInWithEmail(email: string, pass: string): Promise<User | null> {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, pass);
+    return result.user;
+  } catch (error) {
+    console.error('Firebase Email Sign-In Error:', error);
+    throw error;
+  }
+}
+
+export async function signUpWithEmail(email: string, pass: string, displayName?: string): Promise<User | null> {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, pass);
+    if (displayName && result.user) {
+      await updateProfile(result.user, { displayName });
+    }
+    return result.user;
+  } catch (error) {
+    console.error('Firebase Email Sign-Up Error:', error);
     throw error;
   }
 }

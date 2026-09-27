@@ -10,11 +10,19 @@ import {
   Zap,
   Radio,
   ExternalLink,
+  LogIn,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import CommandPaletteModal from './CommandPaletteModal';
+import { useAuth } from '@/context/AuthContext';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 export default function TopCommandBar() {
+  const { firebaseUser, userProfile, logout } = useAuth();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -173,18 +181,76 @@ export default function TopCommandBar() {
             {isDark ? <Moon className="w-4 h-4 text-blue-500" /> : <Sun className="w-4 h-4 text-amber-500" />}
           </button>
 
-          {/* User Profile Avatar Circle */}
-          <Link
-            href="/profile"
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shadow-xs hover:ring-2 hover:ring-primary/20 transition-all"
-          >
-            MU
-          </Link>
+          {/* User Profile Avatar / Sign-In Button */}
+          {firebaseUser ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shadow-xs hover:ring-2 hover:ring-primary/20 transition-all overflow-hidden"
+              >
+                {firebaseUser.photoURL ? (
+                  <img src={firebaseUser.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span>
+                    {(userProfile?.name || firebaseUser.displayName || firebaseUser.email || "U")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
+                )}
+              </button>
+
+              {/* User Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 top-10 w-56 bg-white rounded-xl border border-slate-200 shadow-modal p-2 space-y-1 z-50 animate-in fade-in zoom-in-95">
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <p className="text-xs font-bold text-slate-900 truncate">
+                      {userProfile?.name || firebaseUser.displayName || "Engineer"}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono truncate">{firebaseUser.email}</p>
+                  </div>
+
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-slate-500" />
+                    Career Profile
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsUserMenuOpen(false);
+                      await logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition active:scale-95"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </header>
 
       {/* ⌘ K Command Palette Modal */}
       <CommandPaletteModal isOpen={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
+
+      {/* Auth Modal for Google / Email */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );
 }

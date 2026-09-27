@@ -23,6 +23,7 @@ import {
   PlugZap,
 } from 'lucide-react';
 import { mockUserProfile } from '@/data/mock/dashboardData';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavItem {
   name: string;
@@ -51,6 +52,7 @@ const mainNavItems: NavItem[] = [
 
 export default function SidebarNav() {
   const pathname = usePathname();
+  const { firebaseUser, userProfile } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -58,6 +60,14 @@ export default function SidebarNav() {
     }
     return pathname?.startsWith(href);
   };
+
+  const displayName = userProfile?.name || firebaseUser?.displayName || mockUserProfile.name;
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-60 bg-white border-r border-slate-200 z-50 flex flex-col justify-between select-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]">
@@ -149,18 +159,22 @@ export default function SidebarNav() {
           href="/profile"
           className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200 shadow-xs hover:border-slate-300 transition-all group"
         >
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
-            MU
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs overflow-hidden">
+            {firebaseUser?.photoURL ? (
+              <img src={firebaseUser.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              initials || 'MU'
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <p className="text-[12px] font-semibold text-slate-900 truncate group-hover:text-primary transition-colors">
-                {mockUserProfile.name}
+                {displayName}
               </p>
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />
             </div>
             <p className="text-[11px] font-mono text-slate-400 truncate">
-              {mockUserProfile.targetRole}
+              {firebaseUser?.email || mockUserProfile.targetRole}
             </p>
           </div>
         </Link>

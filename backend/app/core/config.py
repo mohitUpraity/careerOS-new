@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
 from typing import List
+from dotenv import load_dotenv
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Project root directory
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 class Settings:
     PROJECT_NAME: str = "CareerOS Intelligence API"
