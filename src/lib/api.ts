@@ -82,3 +82,37 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewData | 
     return null;
   }
 }
+
+// -----------------------------------------------------------------------------
+// Gemini AI Endpoints Bridge
+// -----------------------------------------------------------------------------
+export async function generateAIPost(checkinText: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/ai/generate-post`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checkin_text: checkinText }),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return data.post_content;
+  } catch (err) {
+    console.warn('Gemini AI post generation failed, using localized prompt fallback.', err);
+    return null;
+  }
+}
+
+export async function tailorResumeWithAI(bullets: string[], targetJd: string): Promise<{ tailored_analysis: string; ats_estimated_score: number } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/ai/tailor-resume`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bullets, target_jd: targetJd }),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Gemini AI resume tailoring failed, using localized analysis fallback.', err);
+    return null;
+  }
+}

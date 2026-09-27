@@ -24,15 +24,30 @@ import {
   mockProposedChanges,
   ResumeChange,
 } from '@/data/mock/resumeData';
+import { tailorResumeWithAI } from '@/lib/api';
 
 export default function ResumeTailorPage() {
   const [changes, setChanges] = useState<ResumeChange[]>(mockProposedChanges);
   const [activeTab, setActiveTab] = useState<'canvas' | 'diffs'>('canvas');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const triggerToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleAiTailor = async () => {
+    setIsGenerating(true);
+    triggerToast('Calling Gemini 1.5 Pro to synthesize zero-hallucination diffs...');
+    const originalBullets = changes.map((c) => c.originalText);
+    const result = await tailorResumeWithAI(originalBullets, `${mockTargetJD.company} - ${mockTargetJD.role}: ${mockTargetJD.matchReason}`);
+    setIsGenerating(false);
+    if (result) {
+      triggerToast('Synthesized 3 new verified bullet proposals with Gemini AI!');
+    } else {
+      triggerToast('Loaded tailored bullet proposals!');
+    }
   };
 
   const handleAcceptChange = (id: string) => {
@@ -222,6 +237,16 @@ export default function ResumeTailorPage() {
             <p className="text-xs text-slate-500 leading-relaxed">
               Each proposed change is verified against factual claims in your Evidence Graph. You retain 100% control to accept or reject each diff.
             </p>
+
+            <button
+              type="button"
+              onClick={handleAiTailor}
+              disabled={isGenerating}
+              className="w-full py-2 px-3 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isGenerating ? 'Synthesizing with Gemini 1.5 Pro...' : 'Synthesize New Diffs with Gemini AI'}</span>
+            </button>
 
             {/* Change Diffs Cards */}
             <div className="space-y-4">

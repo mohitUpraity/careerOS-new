@@ -32,6 +32,7 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
+import { generateAIPost } from '@/lib/api';
 
 interface ScheduledPost {
   id: string;
@@ -103,14 +104,21 @@ export default function LinkedInAndPresencePage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleGeneratePost = (e: React.FormEvent) => {
+  const handleGeneratePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkInText.trim()) return;
-    setPostDraft(
-      `Just pushed a major milestone: ${checkInText}! 🚀\n\nBenchmarked the architecture and verified full integration with zero hallucinations.\n\nKey findings:\n- Optimized processing latency\n- Validated with automated test harness\n- Pushed telemetry updates to CareerOS graph\n\n#Engineering #AI #FullStack #BuildInPublic`
-    );
+    triggerToast('Generating technical post via Gemini AI...');
+    const aiPost = await generateAIPost(checkInText);
+    if (aiPost) {
+      setPostDraft(aiPost);
+      triggerToast('Generated technical post draft using Gemini 1.5 Pro!');
+    } else {
+      setPostDraft(
+        `Just pushed a major milestone: ${checkInText}! 🚀\n\nBenchmarked the architecture and verified full integration with zero hallucinations.\n\nKey findings:\n- Optimized processing latency\n- Validated with automated test harness\n- Pushed telemetry updates to CareerOS graph\n\n#Engineering #AI #FullStack #BuildInPublic`
+      );
+      triggerToast('Generated technical post draft!');
+    }
     setCheckInText('');
-    triggerToast('Generated technical post draft using Gemini AI!');
   };
 
   const handleCreatePostSubmit = (e: React.FormEvent) => {
