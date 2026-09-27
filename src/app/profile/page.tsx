@@ -26,27 +26,49 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { mockUserProfile } from '@/data/mock/dashboardData';
+import { fetchProfile, updateProfile } from '@/lib/api';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const [name, setName] = useState('Mohit Upraity');
-  const [headline, setHeadline] = useState('AI Engineer | Full-Stack Developer | DRDO Intern');
-  const [location, setLocation] = useState('Agra, India');
-  const [email, setEmail] = useState('mohitupraity@email.com');
+  const [headline, setHeadline] = useState('AI Systems & Low-Latency Engineer');
+  const [location, setLocation] = useState('Bengaluru, India / Remote PST');
+  const [email, setEmail] = useState('mohit@careeros.ai');
   const [bio, setBio] = useState(
-    'Computer Science student passionate about AI, ML, cybersecurity and building real-world products. Currently exploring LLMs, RAG and AI agents while developing full-stack applications.'
+    'Passionate about high-throughput distributed inference, zero-copy kernel networking, and deterministic AI systems.'
   );
+
+  React.useEffect(() => {
+    async function load() {
+      const p = await fetchProfile();
+      if (p) {
+        if (p.name) setName(p.name);
+        if (p.headline) setHeadline(p.headline);
+        if (p.location) setLocation(p.location);
+        if (p.email) setEmail(p.email);
+        if (p.manifesto) setBio(p.manifesto);
+      }
+    }
+    load();
+  }, []);
 
   const triggerToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
-    triggerToast('Profile & Career Targets updated successfully!');
+    await updateProfile({
+      name,
+      headline,
+      location,
+      email,
+      manifesto: bio,
+    });
+    triggerToast('Profile & Career Targets synchronized with backend database!');
   };
 
   return (

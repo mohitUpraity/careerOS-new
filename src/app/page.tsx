@@ -30,12 +30,24 @@ import {
   mockRadarOpportunities,
   mockQuickStats,
 } from '@/data/mock/dashboardData';
+import { fetchDashboardOverview, fetchProfile, DashboardOverviewData, UserProfileData } from '@/lib/api';
 
 export default function DashboardPage() {
   const [activeStep, setActiveStep] = useState(2);
   const [tasks, setTasks] = useState(mockTodayTimeline);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardOverviewData | null>(null);
+
+  React.useEffect(() => {
+    async function loadData() {
+      const [p, d] = await Promise.all([fetchProfile(), fetchDashboardOverview()]);
+      if (p) setProfileData(p);
+      if (d) setDashboardData(d);
+    }
+    loadData();
+  }, []);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
