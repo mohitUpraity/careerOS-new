@@ -248,65 +248,178 @@ export default function LearningPage() {
             </div>
           </div>
 
-          {/* Continue Learning Section */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-4">
-            <h2 className="font-bold text-base text-slate-900">Active Curriculum Modules</h2>
-            <div className="space-y-3">
-              {[
-                {
-                  title: 'Distributed KV-Cache & PagedAttention Optimization',
-                  category: 'Distributed Systems',
-                  status: 'Completed',
-                  progress: 100,
-                  time: '4h 30m',
-                },
-                {
-                  title: 'FlashDecoding++ & Speculative Verification Latency',
-                  category: 'Kernel Programming',
-                  status: 'In Progress',
-                  progress: 65,
-                  time: '3h 15m',
-                },
-                {
-                  title: 'Multi-GPU Straggler Mitigation & NCCL Collectives',
-                  category: 'Cluster Engineering',
-                  status: 'Upcoming',
-                  progress: 0,
-                  time: '5h 00m',
-                },
-              ].map((m, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100/80 transition-colors flex items-center justify-between gap-4"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
-                        {m.category}
+          {/* Active Tab Specific Content */}
+          {activeTab === 'Projects' ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-base text-slate-900">Evidence-Generating Capstone Projects</h2>
+                <span className="font-mono text-xs text-primary font-bold">3 ACTIVE ASSIGNMENTS</span>
+              </div>
+              <div className="space-y-3 text-xs">
+                {[
+                  {
+                    title: 'Distributed vLLM PagedAttention Kernel Benchmark',
+                    tech: 'PyTorch · Triton · CUDA',
+                    evidenceYield: '+18% System Readiness',
+                    status: 'In Progress (60%)',
+                    desc: 'Build and profile custom Triton block attention kernel against FlashAttention-2 baseline.',
+                  },
+                  {
+                    title: 'Multi-Agent Semantic RAG Evaluator with Ragas',
+                    tech: 'FastAPI · LangGraph · ChromaDB',
+                    evidenceYield: '+14% Applied AI Readiness',
+                    status: 'Ready to Start',
+                    desc: 'Implement automated synthetic test-case generator for context recall and answer faithfulness.',
+                  },
+                  {
+                    title: 'Async Continuous Batching Router with Prometheus',
+                    tech: 'Python · Docker · Grafana',
+                    evidenceYield: '+12% MLOps Readiness',
+                    status: 'Upcoming',
+                    desc: 'Deploy low-latency HTTP queue router with speculative verification straggler mitigation.',
+                  },
+                ].map((proj, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100/80 transition-colors space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-slate-900">{proj.title}</h4>
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono text-[10px] font-bold">
+                        {proj.evidenceYield}
                       </span>
-                      <span className="font-mono text-[11px] text-slate-400">{m.time}</span>
                     </div>
-                    <h4 className="font-bold text-xs text-slate-900 truncate">{m.title}</h4>
+                    <p className="text-slate-600 text-[11px] leading-relaxed">{proj.desc}</p>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                      <span className="font-mono text-[10px] text-slate-400">{proj.tech}</span>
+                      <button
+                        type="button"
+                        onClick={() => triggerToast(`Opened workspace for ${proj.title}`)}
+                        className="px-3 py-1 rounded-lg bg-primary text-white text-[11px] font-semibold hover:bg-primary-hover shadow-2xs"
+                      >
+                        Open Project Spec →
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-24 hidden sm:block">
-                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-primary h-full rounded-full" style={{ width: `${m.progress}%` }}></div>
+                ))}
+              </div>
+            </div>
+          ) : activeTab === 'Certificates' ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-base text-slate-900">Industry Credential Evaluator</h2>
+                <span className="font-mono text-xs text-emerald-700 font-bold">2/3 VERIFIED</span>
+              </div>
+              <div className="space-y-3 text-xs">
+                {[
+                  {
+                    title: 'DeepLearning.AI Generative AI with Large Language Models',
+                    issuer: 'Coursera / AWS',
+                    status: 'Verified Proof Linked',
+                    badge: 'VERIFIED',
+                    score: '98% Score',
+                  },
+                  {
+                    title: 'NVIDIA Certified Associate – Generative AI & LLMs',
+                    issuer: 'NVIDIA Deep Learning Institute',
+                    status: 'Verified Proof Linked',
+                    badge: 'VERIFIED',
+                    score: 'Passed',
+                  },
+                  {
+                    title: 'AWS Certified Machine Learning – Specialty (MLS-C01)',
+                    issuer: 'Amazon Web Services',
+                    status: 'In Prep (Exam in 18 Days)',
+                    badge: 'PREPARING',
+                    score: 'Target: 850+',
+                  },
+                ].map((cert, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
+                          {cert.issuer}
+                        </span>
+                        <span className="font-mono text-[10px] text-emerald-700 font-bold">{cert.score}</span>
                       </div>
+                      <h4 className="font-bold text-xs text-slate-900 truncate">{cert.title}</h4>
+                      <p className="text-[11px] text-slate-500 font-mono">{cert.status}</p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => triggerToast(`Resumed ${m.title}`)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+                      onClick={() => triggerToast(`Credential details opened for ${cert.title}`)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs shrink-0"
                     >
-                      {m.progress === 100 ? 'Review' : 'Resume'}
+                      Audit Proof
                     </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Continue Learning Section */
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-4">
+              <h2 className="font-bold text-base text-slate-900">Active Curriculum Modules</h2>
+              <div className="space-y-3">
+                {[
+                  {
+                    title: 'Distributed KV-Cache & PagedAttention Optimization',
+                    category: 'Distributed Systems',
+                    status: 'Completed',
+                    progress: 100,
+                    time: '4h 30m',
+                  },
+                  {
+                    title: 'FlashDecoding++ & Speculative Verification Latency',
+                    category: 'Kernel Programming',
+                    status: 'In Progress',
+                    progress: 65,
+                    time: '3h 15m',
+                  },
+                  {
+                    title: 'Multi-GPU Straggler Mitigation & NCCL Collectives',
+                    category: 'Cluster Engineering',
+                    status: 'Upcoming',
+                    progress: 0,
+                    time: '5h 00m',
+                  },
+                ].map((m, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100/80 transition-colors flex items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
+                          {m.category}
+                        </span>
+                        <span className="font-mono text-[11px] text-slate-400">{m.time}</span>
+                      </div>
+                      <h4 className="font-bold text-xs text-slate-900 truncate">{m.title}</h4>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="w-24 hidden sm:block">
+                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-primary h-full rounded-full" style={{ width: `${m.progress}%` }}></div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => triggerToast(`Resumed ${m.title}`)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+                      >
+                        {m.progress === 100 ? 'Review' : 'Resume'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN (4 cols) */}

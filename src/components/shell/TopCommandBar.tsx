@@ -16,6 +16,7 @@ import CommandPaletteModal from './CommandPaletteModal';
 export default function TopCommandBar() {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   return (
     <>
@@ -54,15 +55,113 @@ export default function TopCommandBar() {
             <span>Live Mock</span>
           </Link>
 
-          {/* Notification Button */}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
-          </button>
+          {/* Notification Button & Popover */}
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Notifications"
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                isNotificationsOpen
+                  ? 'bg-blue-50 text-primary'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
+            </button>
+
+            {/* Notification Dropdown Panel */}
+            {isNotificationsOpen && (
+              <div className="absolute right-0 top-10 w-80 bg-white rounded-xl border border-slate-200 shadow-modal p-4 space-y-3 z-50 animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-slate-900">Notifications</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-primary font-mono text-[10px] font-bold">
+                      3 New
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsNotificationsOpen(false)}
+                    className="text-[11px] text-primary hover:underline font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  <div className="p-2.5 rounded-lg bg-blue-50/60 border border-blue-100 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
+                      <span>Anthropic Interview Ready</span>
+                      <span className="font-mono text-[10px] text-slate-400">10m ago</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      Your technical debrief scorecard is ready for review with 91% match.
+                    </p>
+                    <Link
+                      href="/interview-debrief"
+                      onClick={() => setIsNotificationsOpen(false)}
+                      className="text-[11px] text-primary hover:underline font-semibold block pt-0.5"
+                    >
+                      View Debrief Scorecard →
+                    </Link>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
+                      <span>New Top Match Opportunity</span>
+                      <span className="font-mono text-[10px] text-slate-400">1h ago</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      DeepMind posted &ldquo;AI Infrastructure Engineer&rdquo; matching 94% of your skills.
+                    </p>
+                    <Link
+                      href="/opportunities"
+                      onClick={() => setIsNotificationsOpen(false)}
+                      className="text-[11px] text-primary hover:underline font-semibold block pt-0.5"
+                    >
+                      Inspect Opportunity →
+                    </Link>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
+                      <span>GitHub AST Proof Harvested</span>
+                      <span className="font-mono text-[10px] text-slate-400">2h ago</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      3 new PRs indexed from vLLM repository.
+                    </p>
+                    <Link
+                      href="/connectors"
+                      onClick={() => setIsNotificationsOpen(false)}
+                      className="text-[11px] text-primary hover:underline font-semibold block pt-0.5"
+                    >
+                      View Connectors Hub →
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <Link
+                    href="/settings"
+                    onClick={() => setIsNotificationsOpen(false)}
+                    className="text-slate-500 hover:text-slate-800 text-[11px]"
+                  >
+                    Notification Preferences
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setIsNotificationsOpen(false)}
+                    className="text-primary hover:underline font-semibold text-[11px]"
+                  >
+                    Mark all read
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Theme Toggle (Light/Dark Mode toggle) */}
           <button

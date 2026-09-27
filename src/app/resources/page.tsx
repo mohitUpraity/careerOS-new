@@ -139,7 +139,58 @@ export default function ResourcesPage() {
       description: 'Comprehensive line-by-line breakdown and training script for decoder-only language models.',
       url: 'https://youtube.com',
     },
+    {
+      id: 'res_5',
+      title: 'Deep Learning Specialization with Neural Networks & Backprop',
+      provider: 'DeepLearning.AI / Andrew Ng',
+      type: 'Course',
+      level: 'Beginner',
+      readTime: '40h total',
+      category: 'courses',
+      tags: ['Neural Networks', 'CNN', 'Optimization'],
+      description: 'Foundational 5-course sequence covering gradient descent, vectorization, and convolutional architectures.',
+      url: 'https://deeplearning.ai',
+    },
+    {
+      id: 'res_6',
+      title: 'Triton DSL Compiler for High-Performance GPU Kernels',
+      provider: 'OpenAI Triton Team',
+      type: 'Tool',
+      level: 'Advanced',
+      readTime: '1h 30m',
+      category: 'tools',
+      tags: ['Triton', 'Compiler', 'GPU', 'Kernels'],
+      description: 'Python-like programming language and compiler for writing custom Deep Learning primitives without CUDA C++.',
+      url: 'https://triton-lang.org',
+    },
+    {
+      id: 'res_7',
+      title: 'Production FastAPI + vLLM Docker Compose Architecture Template',
+      provider: 'CareerOS Open Source Playbooks',
+      type: 'Template',
+      level: 'Intermediate',
+      readTime: '15 min setup',
+      category: 'templates',
+      tags: ['Docker', 'FastAPI', 'vLLM', 'CI/CD'],
+      description: 'Production-ready boilerplate repository with GPU passthrough, health checks, and Prometheus metrics.',
+      url: 'https://github.com',
+    },
   ];
+
+  const filteredResources = resourceFeed.filter((item) => {
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesTab =
+      activeTab === 'All Resources' ||
+      (activeTab === 'Saved' && savedIds.includes(item.id)) ||
+      (activeTab === 'Bookmarks' && savedIds.includes(item.id)) ||
+      activeTab === 'Completed' ||
+      activeTab === 'In Progress';
+    return matchesCategory && matchesSearch && matchesTab;
+  });
 
   return (
     <div className="space-y-6 pb-16">
@@ -310,58 +361,76 @@ export default function ResourcesPage() {
 
           {/* Feed */}
           <div className="space-y-3">
-            {resourceFeed.map((item) => {
-              const isSaved = savedIds.includes(item.id);
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl border border-slate-200 p-5 shadow-card space-y-3"
+            {filteredResources.length === 0 ? (
+              <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-400 space-y-2">
+                <FolderGit2 className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="text-xs font-semibold text-slate-600">No resources matched your filter or search.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory('all');
+                    setSearchQuery('');
+                    setActiveTab('All Resources');
+                  }}
+                  className="text-xs text-primary font-semibold hover:underline"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
-                          {item.type}
-                        </span>
-                        <span className="font-mono text-[11px] text-slate-400">{item.readTime}</span>
-                        <span className="font-medium text-[11px] text-slate-500">· {item.provider}</span>
+                  Reset all filters
+                </button>
+              </div>
+            ) : (
+              filteredResources.map((item) => {
+                const isSaved = savedIds.includes(item.id);
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-xl border border-slate-200 p-5 shadow-card space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
+                            {item.type}
+                          </span>
+                          <span className="font-mono text-[11px] text-slate-400">{item.readTime}</span>
+                          <span className="font-medium text-[11px] text-slate-500">· {item.provider}</span>
+                        </div>
+                        <h3 className="font-bold text-sm text-slate-900 mt-1">{item.title}</h3>
                       </div>
-                      <h3 className="font-bold text-sm text-slate-900 mt-1">{item.title}</h3>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleSave(item.id, item.title)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            isSaved ? 'text-primary bg-blue-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <Bookmark className="w-4 h-4" />
+                        </button>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => toggleSave(item.id, item.title)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          isSaved ? 'text-primary bg-blue-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        <Bookmark className="w-4 h-4" />
-                      </button>
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                    <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {item.tags.map((tag) => (
+                        <span key={tag} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px]">
+                          #{tag}
+                        </span>
+                      ))}
                     </div>
                   </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>
-
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px]">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
