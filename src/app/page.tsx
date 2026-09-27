@@ -31,8 +31,11 @@ import {
   mockQuickStats,
 } from '@/data/mock/dashboardData';
 import { fetchDashboardOverview, fetchProfile, DashboardOverviewData, UserProfileData } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import LandingPage from '@/components/landing/LandingPage';
 
 export default function DashboardPage() {
+  const { firebaseUser, userProfile, loading } = useAuth();
   const [activeStep, setActiveStep] = useState(2);
   const [tasks, setTasks] = useState(mockTodayTimeline);
   const [showToast, setShowToast] = useState(false);
@@ -59,6 +62,15 @@ export default function DashboardPage() {
     triggerToast(`Action initiated for: "${title}"`);
   };
 
+  // If user is not signed in and authentication state has loaded, show the serious Intro/Landing Page
+  if (!loading && !firebaseUser) {
+    return <LandingPage />;
+  }
+
+  const displayName = userProfile?.name || firebaseUser?.displayName || mockUserProfile.name;
+  const targetRole = profileData?.target_roles?.[0] || mockUserProfile.targetRole;
+  const readiness = userProfile?.overall_readiness || profileData?.overall_readiness || mockUserProfile.readinessScore;
+
   return (
     <div className="space-y-6">
       {/* 1. Top Executive Mission & Context Header */}
@@ -73,13 +85,13 @@ export default function DashboardPage() {
               Sun, 27 Sep 2026 • 21:30 IST
             </span>
             <span className="px-2 py-0.5 rounded bg-blue-50 border border-blue-100 text-primary font-mono text-[11px] font-semibold">
-              Track: {mockUserProfile.targetRole} ({mockUserProfile.targetTrack})
+              Track: {targetRole}
             </span>
           </div>
 
           <div className="flex items-center gap-3 mt-1">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Good evening, {mockUserProfile.name.split(' ')[0]}
+              Good evening, {displayName.split(' ')[0]}
             </h1>
             <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-primary font-mono text-xs font-semibold border border-blue-200/80">
               {mockUserProfile.phase}
@@ -106,7 +118,7 @@ export default function DashboardPage() {
 
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                {mockUserProfile.readinessScore}%
+                {readiness}%
               </span>
               <span className="font-mono text-xs text-slate-400">
                 / {mockUserProfile.readinessTarget}% Target Threshold
