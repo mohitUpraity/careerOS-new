@@ -1,6 +1,7 @@
-from pydantic_settings import BaseSettings
 import os
 from typing import List
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class Settings:
     PROJECT_NAME: str = "CareerOS Intelligence API"
@@ -15,8 +16,11 @@ class Settings:
     ]
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./careeros.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR}/careeros.db")
     
+    # AI Keys
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
     # Environment
     ENV: str = os.getenv("ENV", "development")
 
