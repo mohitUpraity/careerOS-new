@@ -26,5 +26,17 @@ async def get_db():
             await session.close()
 
 async def init_db():
+    # Import all models to ensure they are registered with Base.metadata
+    import backend.app.models.user
+    import backend.app.models.profile
+    import backend.app.models.opportunity
+    import backend.app.models.application
+    import backend.app.models.skill
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Seed initial data if tables are empty
+    from backend.app.services.seed_service import seed_initial_data_if_empty
+    async with AsyncSessionLocal() as session:
+        await seed_initial_data_if_empty(session)

@@ -26,6 +26,13 @@ import {
   MapPin,
   DollarSign
 } from 'lucide-react';
+import {
+  fetchApplications,
+  createApplication,
+  updateApplication,
+  deleteApplication,
+  LiveApplication
+} from '@/lib/api';
 
 interface KanbanApp {
   id: string;
@@ -214,6 +221,31 @@ export default function ApplicationsPage() {
   const [selectedApp, setSelectedApp] = useState<KanbanApp | null>(null);
   const [apps, setApps] = useState<KanbanApp[]>(initialApps);
 
+  // Load live applications from Supabase PostgreSQL
+  React.useEffect(() => {
+    async function loadLiveApps() {
+      const liveList = await fetchApplications();
+      if (liveList && liveList.length > 0) {
+        const mapped: KanbanApp[] = liveList.map((app: LiveApplication) => ({
+          id: app.id,
+          company: app.company,
+          role: app.role,
+          stage: (app.stage as any) || 'APPLIED',
+          matchScore: app.match_score || 88,
+          appliedDate: app.applied_date || 'Recent',
+          tags: app.tags?.length ? app.tags : ['Engineering', 'Target'],
+          resumeVersion: app.resume_version || 'v4',
+          salary: app.salary || '$200k+ package',
+          location: app.location || 'Remote',
+          logoBg: 'bg-blue-50 text-primary',
+          logoText: app.company.slice(0, 2).toUpperCase(),
+        }));
+        setApps(mapped);
+      }
+    }
+    loadLiveApps();
+  }, []);
+
   // Add modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newCompany, setNewCompany] = useState('');
@@ -239,7 +271,7 @@ export default function ApplicationsPage() {
     { id: 'ARCHIVED', name: 'Archived', countBadgeColor: 'bg-slate-100 text-slate-500' },
   ];
 
-  const moveAppStage = (appId: string, nextStage: KanbanApp['stage']) => {
+  const moveAppStage = async (appId: string, nextStage: KanbanApp['stage']) => {
     setApps((prev) =>
       prev.map((a) => (a.id === appId ? { ...a, stage: nextStage } : a))
     );
@@ -247,24 +279,40 @@ export default function ApplicationsPage() {
       setSelectedApp({ ...selectedApp, stage: nextStage });
     }
     triggerToast(`Application moved to ${nextStage}!`);
+
+    // Persist to Supabase backend
+    await updateApplication(appId, { stage: nextStage });
   };
 
-  const handleCreateApplication = (e: React.FormEvent) => {
+  const handleCreateApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCompany.trim() || !newRole.trim()) return;
 
     const initials = newCompany.slice(0, 2).toUpperCase();
-    const newApp: KanbanApp = {
+    const appPayload = {
       id: `app_${Date.now()}`,
       company: newCompany,
       role: newRole,
       stage: newStage,
-      matchScore: newMatchScore || 88,
-      appliedDate: 'Just Now',
+      match_score: newMatchScore || 88,
+      applied_date: 'Just Now',
       tags: ['Engineering', 'Target Role'],
-      resumeVersion: 'v4',
+      resume_version: 'v4',
       salary: newSalary || '$200k+ package',
       location: newLocation || 'San Francisco, CA',
+    };
+
+    const newApp: KanbanApp = {
+      id: appPayload.id,
+      company: appPayload.company,
+      role: appPayload.role,
+      stage: appPayload.stage as any,
+      matchScore: appPayload.match_score,
+      appliedDate: appPayload.applied_date,
+      tags: appPayload.tags,
+      resumeVersion: appPayload.resume_version,
+      salary: appPayload.salary,
+      location: appPayload.location,
       logoBg: 'bg-blue-50 text-primary',
       logoText: initials,
     };
@@ -276,6 +324,9 @@ export default function ApplicationsPage() {
     setNewSalary('');
     setNewLocation('');
     triggerToast(`Created application for ${newCompany}!`);
+
+    // Persist to Supabase backend
+    await createApplication(appPayload);
   };
 
   const filteredApps = apps.filter((a) => {

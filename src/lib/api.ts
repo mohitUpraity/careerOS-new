@@ -46,6 +46,82 @@ export interface DashboardOverviewData {
   interviewArenaScore: number;
 }
 
+export interface LiveOpportunity {
+  id: string;
+  title: string;
+  company: string;
+  category: string;
+  location: string;
+  workplace_type: string;
+  match_score: number;
+  match_reason?: string;
+  salary_range?: string;
+  experience_level: string;
+  posted_date: string;
+  deadline?: string;
+  tags: string[];
+  key_requirements: string[];
+  hard_skills: string[];
+  verified_evidence_required: string[];
+  apply_url?: string;
+}
+
+export interface LiveApplication {
+  id: string;
+  user_id: string;
+  opportunity_id?: string;
+  company: string;
+  role: string;
+  stage: string;
+  match_score: number;
+  salary?: string;
+  location?: string;
+  resume_version: string;
+  tags: string[];
+  notes?: string;
+  applied_date?: string;
+}
+
+export interface LiveSkill {
+  id: string;
+  name: string;
+  category: string;
+  proficiency: number;
+  verified: boolean;
+  proof_count: number;
+  ast_proof_hash?: string;
+  ast_proof_details?: any;
+  tags: string[];
+}
+
+export interface LiveEvidence {
+  id: string;
+  title: string;
+  type: string;
+  platform: string;
+  sha_hash?: string;
+  url?: string;
+  metric_proof?: string;
+  skills_linked: string[];
+  verified: boolean;
+}
+
+export interface LiveSkillGraph {
+  skills: LiveSkill[];
+  evidence: LiveEvidence[];
+  metrics: {
+    total_skills: number;
+    verified_skills: number;
+    total_evidence: number;
+    avg_proficiency: number;
+    verification_status: string;
+    proof_integrity: string;
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Profile & Dashboard Endpoints
+// -----------------------------------------------------------------------------
 export async function fetchProfile(): Promise<UserProfileData | null> {
   try {
     const res = await fetch(`${API_BASE}/profile`, { cache: 'no-store' });
@@ -79,6 +155,118 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewData | 
     return await res.json();
   } catch (err) {
     console.warn('Backend dashboard overview fetch failed, using localized cache.', err);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Opportunities Endpoints
+// -----------------------------------------------------------------------------
+export async function fetchOpportunities(params?: {
+  category?: string;
+  search?: string;
+  minMatchScore?: number;
+}): Promise<LiveOpportunity[] | null> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.category && params.category !== 'All') query.append('category', params.category);
+    if (params?.search) query.append('search', params.search);
+    if (params?.minMatchScore) query.append('min_match_score', params.minMatchScore.toString());
+
+    const url = `${API_BASE}/opportunities?${query.toString()}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return data.items || [];
+  } catch (err) {
+    console.warn('Backend opportunities fetch failed, using fallback.', err);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Applications Endpoints (Live CRUD against Supabase)
+// -----------------------------------------------------------------------------
+export async function fetchApplications(stage?: string): Promise<LiveApplication[] | null> {
+  try {
+    const query = stage && stage !== 'ALL' ? `?stage=${stage}` : '';
+    const res = await fetch(`${API_BASE}/applications${query}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return data.items || [];
+  } catch (err) {
+    console.warn('Backend applications fetch failed, using fallback.', err);
+    return null;
+  }
+}
+
+export async function createApplication(payload: Partial<LiveApplication>): Promise<LiveApplication | null> {
+  try {
+    const res = await fetch(`${API_BASE}/applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend create application failed, using local update.', err);
+    return null;
+  }
+}
+
+export async function updateApplication(id: string, payload: Partial<LiveApplication>): Promise<LiveApplication | null> {
+  try {
+    const res = await fetch(`${API_BASE}/applications/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend update application failed, using local update.', err);
+    return null;
+  }
+}
+
+export async function deleteApplication(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/applications/${id}`, {
+      method: 'DELETE',
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('Backend delete application failed.', err);
+    return false;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Skills & Evidence Graph Endpoints
+// -----------------------------------------------------------------------------
+export async function fetchSkillGraph(): Promise<LiveSkillGraph | null> {
+  try {
+    const res = await fetch(`${API_BASE}/skills/graph`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend skills graph fetch failed, using fallback.', err);
+    return null;
+  }
+}
+
+export async function addEvidence(payload: Partial<LiveEvidence>): Promise<LiveEvidence | null> {
+  try {
+    const res = await fetch(`${API_BASE}/skills/evidence`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend add evidence failed.', err);
     return null;
   }
 }

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { mockOpportunities } from '@/data/mock/opportunitiesData';
 import { OpportunityItem } from '@/types';
+import { fetchOpportunities, LiveOpportunity } from '@/lib/api';
 
 const categories = ['All', 'Jobs', 'Internships', 'Research', 'Scholarships'];
 
@@ -30,9 +31,45 @@ export default function OpportunitiesPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [minMatch, setMinMatch] = useState(80);
+  const [opportunitiesList, setOpportunitiesList] = useState<OpportunityItem[]>(mockOpportunities);
   const [selectedOpp, setSelectedOpp] = useState<OpportunityItem>(mockOpportunities[0]);
   const [savedIds, setSavedIds] = useState<string[]>(['opp_anthropic_02']);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLiveFromDb, setIsLiveFromDb] = useState(false);
+
+  // Fetch live opportunities from Supabase PostgreSQL via FastAPI
+  React.useEffect(() => {
+    async function loadLiveOpportunities() {
+      const liveItems = await fetchOpportunities();
+      if (liveItems && liveItems.length > 0) {
+        const mapped: OpportunityItem[] = liveItems.map((opp: LiveOpportunity) => ({
+          id: opp.id,
+          title: opp.title,
+          company: opp.company,
+          location: opp.location,
+          type: (opp.category as any) || 'Jobs',
+          matchScore: opp.match_score,
+          fitVerdict: opp.match_reason || `${opp.match_score}% High Conviction Match`,
+          deadline: opp.deadline || 'Ongoing',
+          salary: opp.salary_range || 'Competitive',
+          verifiedEvidenceCount: opp.verified_evidence_required?.length || 2,
+          requiredSkills: (opp.hard_skills || []).map((skillName: string, idx: number) => ({
+            name: skillName,
+            matched: idx < 3,
+          })),
+          description: opp.match_reason || 'Verified opportunity matching your technical trajectory and AST evidence proofs.',
+          keyResponsibilities: opp.key_requirements || [],
+          benefits: ['$245k–$280k Base + Frontloaded Equity', 'Comprehensive healthcare & wellness', 'Flexible remote/hybrid work policy'],
+          applyUrl: opp.apply_url || 'https://careers.google.com',
+        }));
+
+        setOpportunitiesList(mapped);
+        setSelectedOpp(mapped[0]);
+        setIsLiveFromDb(true);
+      }
+    }
+    loadLiveOpportunities();
+  }, []);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -50,7 +87,7 @@ export default function OpportunitiesPage() {
     }
   };
 
-  const filteredList = mockOpportunities.filter((opp) => {
+  const filteredList = opportunitiesList.filter((opp) => {
     const matchesCategory = selectedCategory === 'All' || opp.type === selectedCategory;
     const matchesSearch =
       opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
