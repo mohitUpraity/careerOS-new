@@ -6,11 +6,11 @@ CareerOS • Locked planning baseline • 27 September 2026
 
 1. Architecture
 
-Recommended baseline: Next.js/TypeScript frontend; FastAPI/Python application backend; Firebase Authentication for identity; Firebase SQL Connect backed by Cloud SQL for PostgreSQL for relational data; pgvector for semantic retrieval; Firebase Storage for documents; Gemini through an AI gateway; Redis/worker only when asynchronous workloads require it.
+Locked baseline: Next.js/TypeScript frontend; FastAPI/Python application backend; Firebase Authentication for identity; Supabase PostgreSQL (17.6) as the single source of truth for all application data; Supabase pgvector for semantic retrieval; Supabase/Firebase Storage for documents; Gemini 1.5 Pro / 2.0 AI orchestration; Redis/worker only when asynchronous workloads require it.
 
 2. Logical architecture
 
-Web → FastAPI API → domain services → repositories → SQL Connect/PostgreSQL; AI tasks → AI Gateway → Gemini/other providers; documents → object storage; long-running ingestion/rendering → queue/worker; telemetry → structured logs/metrics.
+Web → FastAPI API → domain services → repositories → Supabase PostgreSQL; AI tasks → Gemini AI Orchestration; documents → Supabase Storage; long-running ingestion/rendering → queue/worker; telemetry → structured logs/metrics.
 
 3. Technology decisions
 
@@ -28,7 +28,7 @@ Server/client boundaries intentional; no business logic duplicated from FastAPI.
 
 UI
 
-Tailwind + shadcn/ui + Lucide
+Tailwind + Lucide
 
 Accessible, reusable components; consistent tokens.
 
@@ -40,13 +40,13 @@ Typed request/response contracts.
 
 DB
 
-Cloud SQL PostgreSQL via Firebase SQL Connect
+Supabase PostgreSQL (17.6)
 
-Relational source of truth.
+Single source of truth for all application data.
 
 Vector
 
-pgvector
+Supabase pgvector
 
 Use for semantic retrieval; combine with structured filters.
 
@@ -54,11 +54,11 @@ Auth
 
 Firebase Authentication
 
-Google login first; FastAPI verifies Firebase identity.
+Google login & Email/password; FastAPI verifies Firebase identity tokens and syncs to Supabase.
 
 Storage
 
-Firebase Storage
+Supabase Storage
 
 Documents/assets; metadata in SQL.
 
