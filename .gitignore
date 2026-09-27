@@ -1,0 +1,46 @@
+# Node & Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment & Secrets
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# Python & FastAPI Backend
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Turbopack & Cache
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
