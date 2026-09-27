@@ -39,54 +39,77 @@ async def sync_firebase_user(
     Called after Firebase Auth (Google / Email) login on frontend.
     Upserts user record and profile in Supabase PostgreSQL (Single Source of Truth).
     """
-    # 1. Upsert User in Supabase PostgreSQL
-    result = await db.execute(select(UserModel).filter(UserModel.id == payload.uid))
-    user = result.scalars().first()
+    try:
+        # 1. Check or Upsert User in Supabase PostgreSQL
+        result = await db.execute(select(UserModel).filter(UserModel.id == payload.uid))
+        user = result.scalars().first()
 
-    if not user:
-        user = UserModel(
-            id=payload.uid,
-            email=payload.email,
-            name=payload.name or "Engineer",
-            avatar_url=payload.avatar_url,
+        if not user:
+            user = UserModel(
+                id=payload.uid,
+                email=payload.email,
+                name=payload.name or "Engineer",
+                avatar_url=payload.avatar_url,
+            )
+            db.add(user)
+        else:
+            user.email = payload.email
+            if payload.name:
+                user.name = payload.name
+            if payload.avatar_url:
+                user.avatar_url = payload.avatar_url
+            user.updated_at = datetime.utcnow()
+
+        # 2. Check or Upsert UserProfile in Supabase PostgreSQL
+        prof_res = await db.execute(select(UserProfileModel).filter(UserProfileModel.id == payload.uid))
+        profile = prof_res.scalars().first()
+        if not profile:
+            profile = UserProfileModel(
+                id=payload.uid,
+                name=payload.name or "Engineer",
+                email=payload.email,
+            )
+            db.add(profile)
+        else:
+            profile.email = payload.email
+            if payload.name:
+                profile.name = payload.name
+
+        await db.commit()
+        await db.refresh(user)
+        await db.refresh(profile)
+
+        return UserAuthResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            profile_completeness=profile.profile_completeness,
+            overall_readiness=profile.overall_readiness,
+            created_at=user.created_at,
         )
-        db.add(user)
-    else:
-        user.email = payload.email
-        if payload.name:
-            user.name = payload.name
-        if payload.avatar_url:
-            user.avatar_url = payload.avatar_url
-        user.updated_at = datetime.utcnow()
+    except Exception as err:
+        await db.rollback()
+        # Fallback: re-query existing user in case of concurrent insert race condition
+        result = await db.execute(select(UserModel).filter(UserModel.id == payload.uid))
+        user = result.scalars().first()
+        prof_res = await db.execute(select(UserProfileModel).filter(UserProfileModel.id == payload.uid))
+        profile = prof_res.scalars().first()
 
-    # 2. Ensure UserProfile exists in Supabase PostgreSQL
-    prof_res = await db.execute(select(UserProfileModel).filter(UserProfileModel.id == payload.uid))
-    profile = prof_res.scalars().first()
-    if not profile:
-        profile = UserProfileModel(
-            id=payload.uid,
-            name=payload.name or "Engineer",
-            email=payload.email,
+        if user:
+            return UserAuthResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                avatar_url=user.avatar_url,
+                profile_completeness=profile.profile_completeness if profile else 90,
+                overall_readiness=profile.overall_readiness if profile else 85,
+                created_at=user.created_at,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync user: {str(err)}",
         )
-        db.add(profile)
-    else:
-        profile.email = payload.email
-        if payload.name:
-            profile.name = payload.name
-
-    await db.commit()
-    await db.refresh(user)
-    await db.refresh(profile)
-
-    return UserAuthResponse(
-        id=user.id,
-        email=user.email,
-        name=user.name,
-        avatar_url=user.avatar_url,
-        profile_completeness=profile.profile_completeness,
-        overall_readiness=profile.overall_readiness,
-        created_at=user.created_at,
-    )
 
 @router.get("/me", response_model=UserAuthResponse)
 async def get_my_info(
