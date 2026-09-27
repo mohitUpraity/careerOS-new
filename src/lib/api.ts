@@ -243,6 +243,42 @@ export async function deleteApplication(id: string): Promise<boolean> {
 }
 
 // -----------------------------------------------------------------------------
+// Hackathons & Events Endpoints
+// -----------------------------------------------------------------------------
+export interface LiveHackathon {
+  id: string;
+  title: string;
+  organizer: string;
+  prize_pool: string;
+  status: string;
+  deadline?: string;
+  start_date?: string;
+  location: string;
+  team_size: string;
+  tracks: string[];
+  tags: string[];
+  url?: string;
+  description?: string;
+  registered_count: number;
+}
+
+export async function fetchHackathons(params?: { status?: string; search?: string }): Promise<LiveHackathon[] | null> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+
+    const res = await fetch(`${API_BASE}/hackathons?${query.toString()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return data.items || [];
+  } catch (err) {
+    console.warn('Backend hackathons fetch failed, using fallback.', err);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Skills & Evidence Graph Endpoints
 // -----------------------------------------------------------------------------
 export async function fetchSkillGraph(): Promise<LiveSkillGraph | null> {
