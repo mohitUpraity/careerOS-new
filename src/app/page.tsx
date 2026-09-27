@@ -32,10 +32,9 @@ import {
 } from '@/data/mock/dashboardData';
 import { fetchDashboardOverview, fetchProfile, DashboardOverviewData, UserProfileData } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import LandingPage from '@/components/landing/LandingPage';
 
 export default function DashboardPage() {
-  const { firebaseUser, userProfile, loading } = useAuth();
+  const { firebaseUser, userProfile } = useAuth();
   const [activeStep, setActiveStep] = useState(2);
   const [tasks, setTasks] = useState(mockTodayTimeline);
   const [showToast, setShowToast] = useState(false);
@@ -61,11 +60,6 @@ export default function DashboardPage() {
   const handleTaskAction = (taskId: string, title: string) => {
     triggerToast(`Action initiated for: "${title}"`);
   };
-
-  // If user is not signed in and authentication state has loaded, show the serious Intro/Landing Page
-  if (!loading && !firebaseUser) {
-    return <LandingPage />;
-  }
 
   const displayName = userProfile?.name || firebaseUser?.displayName || mockUserProfile.name;
   const targetRole = profileData?.target_roles?.[0] || mockUserProfile.targetRole;
