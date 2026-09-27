@@ -304,3 +304,55 @@ export async function tailorResumeWithAI(bullets: string[], targetJd: string): P
     return null;
   }
 }
+// -----------------------------------------------------------------------------
+// Onboarding & Knowledge Graph Parsing Endpoints
+// -----------------------------------------------------------------------------
+export async function parseResumeFile(file: File, targetRoles: string[] = []): Promise<any | null> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (targetRoles.length > 0) {
+      formData.append('target_roles_str', targetRoles.join(', '));
+    }
+
+    const res = await fetch(`${API_BASE}/onboarding/parse-resume-file`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend resume file parsing failed.', err);
+    return null;
+  }
+}
+
+export async function parseResumeText(resumeText: string, targetRoles: string[] = []): Promise<any | null> {
+  try {
+    const res = await fetch(`${API_BASE}/onboarding/parse-resume-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resume_text: resumeText, target_roles: targetRoles }),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend resume text parsing failed.', err);
+    return null;
+  }
+}
+
+export async function commitOnboardingProfile(payload: any): Promise<any | null> {
+  try {
+    const res = await fetch(`${API_BASE}/onboarding/commit-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Backend profile commit failed.', err);
+    return null;
+  }
+}

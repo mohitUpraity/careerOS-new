@@ -39,9 +39,10 @@ export default function ResumeTailorPage() {
 
   const handleAiTailor = async () => {
     setIsGenerating(true);
-    triggerToast('Calling Gemini 1.5 Pro to synthesize zero-hallucination diffs...');
-    const originalBullets = changes.map((c) => c.originalText);
-    const result = await tailorResumeWithAI(originalBullets, `${mockTargetJD.company} - ${mockTargetJD.role}: ${mockTargetJD.matchReason}`);
+    const result = await tailorResumeWithAI(
+      originalBullets,
+      `${mockTargetJD.company} - ${mockTargetJD.role} (Keywords: ${mockTargetJD.matchedKeywords.join(', ')})`
+    );
     setIsGenerating(false);
     if (result) {
       triggerToast('Synthesized 3 new verified bullet proposals with Gemini AI!');

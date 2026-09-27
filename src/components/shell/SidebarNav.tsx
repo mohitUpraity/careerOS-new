@@ -35,6 +35,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Onboard & Ingest', href: '/onboarding', icon: Sparkles, badge: 'AI GRAPH', badgeColor: 'bg-indigo-100 text-indigo-700' },
   { name: 'Opportunities', href: '/opportunities', icon: Briefcase, badge: '24' },
   { name: 'Hackathons & Events', href: '/hackathons-and-events', icon: Trophy, badge: 'NEW', badgeColor: 'bg-emerald-100 text-emerald-700' },
   { name: 'Applications', href: '/applications', icon: TrendingUp, badge: '12', badgeColor: 'bg-blue-100 text-blue-700' },
