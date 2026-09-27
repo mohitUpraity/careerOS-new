@@ -78,17 +78,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (user) => {
-      setFirebaseUser(user);
-      if (user) {
-        await syncWithSupabase(user);
-      } else {
-        setUserProfile(null);
-      }
+    // Safety fallback: ensure loading never hangs more than 1.5s on cold starts
+    const timeout = setTimeout(() => {
       setLoading(false);
+    }, 1500);
+
+    const unsubscribe = onAuthChange(async (user) => {
+      try {
+        setFirebaseUser(user);
+        if (user) {
+          await syncWithSupabase(user);
+        } else {
+          setUserProfile(null);
+        }
+      } catch (e) {
+        console.warn("Auth initialization sync warning:", e);
+      } finally {
+        setLoading(false);
+        clearTimeout(timeout);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {

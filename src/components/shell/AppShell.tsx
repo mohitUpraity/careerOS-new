@@ -29,7 +29,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           INITIALIZING CAREEROS ENGINE...
         </p>
         <span className="mt-2 font-mono text-xs text-slate-500">
-          Syncing Supabase PostgreSQL &amp; Firebase Auth
+          Syncing Supabase PostgreSQL & Firebase Auth
         </span>
       </div>
     );
