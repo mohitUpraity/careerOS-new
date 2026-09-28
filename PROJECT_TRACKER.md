@@ -100,22 +100,23 @@
 │ [x] 16 Functional screens matching Stitch Design System                          │
 │ [x] Complete Client State Engines (Kanban, AST auditor, Audio timeline scrubber) │
 │ [x] 0 Dead buttons / 0 Non-functional tabs                                       │
-│ [x] 0 TypeScript / Build errors (Clean 20/20 production build)                   │
+│ [x] 0 TypeScript / Build errors (Clean 21/21 production build)                   │
 ├──────────────────────────────────────────────────────────────────────────────────┤
-│ PHASE 2: AUTHENTICATION, DATABASE & FASTAPI (ACTIVE)                             │
+│ PHASE 2: AUTHENTICATION, DATABASE, KNOWLEDGE GRAPH & RAG (100% COMPLETE)         │
 │ [x] Architecture Lock: Firebase Auth ONLY + Supabase PostgreSQL single source    │
-│ [x] Supabase Pooler integration (aws-0-ap-northeast-2.pooler.supabase.com)       │
-│ [x] Core PostgreSQL DDL: users, user_profiles, opportunities, applications        │
+│ [x] Supabase Pooler integration (aws-0-ap-northeast-2.pooler.supabase.com:5432) │
+│ [x] PostgreSQL DDL: users, user_profiles, resumes, skills, evidence_vault, rag   │
 │ [x] FastAPI Backend initialization (`backend/app`) with async SQLAlchemy 2.0     │
-│ [x] Live Auth Token Verification & Atomic Supabase User Sync (`/api/v1/auth`)    │
-│ [x] Gemini AI Engine integration (`gemini-1.5-pro` & `gemini-2.0`)               │
-│ [x] Standalone Landing Page (`/`) with full-width layout & protected routes      │
-│ [ ] Complete remaining Supabase ORM models (skills, evidence, resumes, planner)  │
-│ [ ] Wire frontend pages to live FastAPI endpoints (replacing mock fallback data) │
+│ [x] Firebase Token Verification & Multi-tenant User Isolation on all routes       │
+│ [x] Multi-Format Ingestion Engine (PyPDF, Python-DOCX, Text, AST Entity Extractor)│
+│ [x] Master Golden Resume storage, versioning, and zero-fabrication tailoring     │
+│ [x] NetworkX Personal Knowledge Graph Engine with topology metrics & centrality  │
+│ [x] Google Gemini `text-embedding-004` RAG Pipeline & cosine similarity search   │
+│ [x] Multi-Dimensional Opportunity Matching Engine with Knowledge Graph scoring    │
+│ [x] Dynamic Profile & Settings Ingestion Hub with live Supabase synchronization  │
 ├──────────────────────────────────────────────────────────────────────────────────┤
-│ PHASE 3: BACKGROUND HARVESTERS & REALTIME RAG                                    │
-│ [ ] Celery / Redis background workers for GitHub & LeetCode harvesters           │
-│ [ ] pgvector embeddings generation for semantic JD & resume matching             │
+│ PHASE 3: HARVESTERS & REALTIME AGENTIC COLLABORATION                             │
+│ [ ] Background connectors for GitHub & LeetCode continuous telemetry             │
 │ [ ] Real-time interview simulation audio streaming                               │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -123,6 +124,15 @@
 ---
 
 ## 🔄 Live Changelog
+
+* **2026-09-28 (Master Golden Resume, Knowledge Graph & RAG Vector Pipeline)**:
+  - **Multi-Format Ingestion Pipeline**: Built `DocumentExtractorService` parsing PDF (`pypdf`), DOCX (`python-docx`), and text with deterministic AST extraction across 300+ technical skills, experiences, education, and metric evidence proofs.
+  - **Master Golden Resume Architecture**: Implemented `resumes` and `resume_versions` tables and `/api/v1/resume` endpoints with zero-fabrication AI tailoring and ATS diff summaries.
+  - **Personal Knowledge Graph Engine**: Created `KnowledgeGraphService` powered by `NetworkX` constructing topological graphs (User Persona -> Goals -> Skills -> Evidence -> Experiences) with graph centrality, coverage ratios, and role readiness index.
+  - **RAG & Vector Retrieval Pipeline**: Built `RAGService` with document chunking and Google Gemini `text-embedding-004` 768-dimensional embeddings and cosine similarity search over candidate documents.
+  - **Multi-Dimensional Opportunity Matcher**: Implemented `MatchingService` combining Knowledge Graph evidence coverage + Semantic vector similarity + Hard eligibility + User preference sliders.
+  - **Profile & Settings UI Overhaul**: Added real-time Master Golden Resume ingestion drawer, parsed preview confirmation, Knowledge Graph telemetry card, and authenticated Supabase sync.
+  - **Production Build Verified**: Clean compilation across all 21 Next.js static pages with 0 errors.
 
 * **2026-09-28 (Landing Page Isolation & Protected Routes)**:
   - **Standalone Public Landing Page (`/`)**: Built systems-grade introduction page with hero cockpit, interactive feature tabs, telemetry metric bands, comparison matrix, and live demo modal.
@@ -138,3 +148,4 @@
 * **2026-09-27 (Frontend Complete Build & Verification)**:
   - Complete interactivity for Applications, Skills & Evidence, Daily Planner, and LinkedIn Copilot.
   - Verified static production build: `✓ Generating static pages (20/20)` with 0 errors.
+

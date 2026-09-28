@@ -33,7 +33,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       await signInWithGoogle();
       onClose();
-      router.push("/onboarding");
+      router.push("/");
     } catch (err: any) {
       setError(err?.message || "Google Authentication failed. Please try again.");
     } finally {
@@ -52,7 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         await signInWithEmail(email, password);
       }
       onClose();
-      router.push("/onboarding");
+      router.push("/");
     } catch (err: any) {
       setError(err?.message || "Authentication failed. Check your credentials.");
     } finally {

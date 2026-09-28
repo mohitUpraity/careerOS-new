@@ -33,6 +33,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { generateAIPost } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface ScheduledPost {
   id: string;
@@ -44,47 +45,22 @@ interface ScheduledPost {
   forecastReach: string;
 }
 
-const initialScheduled: ScheduledPost[] = [
-  {
-    id: 'sp_1',
-    title: 'IntelliGuard NGFW: Zero-Copy eBPF Throughput',
-    content: 'Deep dive into zero-copy ring buffers and Linux kernel bypass using XDP. Sustained 4.8M pps throughput benchmarked.',
-    scheduledTime: 'Tomorrow • 09:30 AM',
-    status: 'SCHEDULED',
-    category: 'Systems & Kernel',
-    forecastReach: '12.5k - 18k views',
-  },
-  {
-    id: 'sp_2',
-    title: 'Lessons from DRDO ADRDE AI Research Internship',
-    content: 'Key architectural insights from building high-reliability telemetry pipelines and real-time inference monitoring.',
-    scheduledTime: 'Sep 29 • 11:00 AM',
-    status: 'SCHEDULED',
-    category: 'Experience & Story',
-    forecastReach: '8k - 12k views',
-  },
-  {
-    id: 'sp_3',
-    title: 'Top 5 Memory Pitfalls in Triton GPU Kernels',
-    content: 'Warp divergence, shared memory bank conflicts, and global memory coalescing tips for AI systems engineers.',
-    scheduledTime: 'Oct 02 • 10:00 AM',
-    status: 'DRAFT',
-    category: 'AI Infrastructure',
-    forecastReach: '15k - 22k views',
-  },
-];
+const initialScheduled: ScheduledPost[] = [];
 
 export default function LinkedInAndPresencePage() {
+  const { user, profile } = useAuth();
+  const displayName = profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Engineering Candidate';
+  const targetHeadline = profile?.target_role ? `${profile.target_role} | Technical Builder` : 'Software & AI Systems Engineer';
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+
   const [activeTab, setActiveTab] = useState<'Post Studio' | 'Content Calendar' | 'Profile Optimizer' | 'Engagement' | 'Network' | 'Analytics'>('Post Studio');
   const [checkInText, setCheckInText] = useState('');
-  const [postDraft, setPostDraft] = useState(
-    `Excited to share that I've completed the zero-copy eBPF packet filtering pipeline for IntelliGuard! 🚀\n\nBy leveraging XDP hardware ring buffers and custom Linux kernel hooks, we achieved 4.8M packets/sec sustained throughput at under 120ns latency.\n\nKey takeaways:\n1. Kernel bypass / XDP eliminates OS socket overhead entirely\n2. Memory alignment is paramount for zero-copy ring buffers\n3. AST-based validation ensures deterministic rule enforcement\n\nCode provenance and benchmarks are live on GitHub! 💡\n\n#eBPF #LinuxKernel #Cybersecurity #HighPerformance #BuildInPublic #AI`
-  );
+  const [postDraft, setPostDraft] = useState('');
   
   // Interactive Feed state
-  const [likeCount, setLikeCount] = useState(48);
+  const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const [repostCount, setRepostCount] = useState(7);
+  const [repostCount, setRepostCount] = useState(0);
   const [isReposted, setIsReposted] = useState(false);
 
   // Scheduled posts list
@@ -386,18 +362,24 @@ export default function LinkedInAndPresencePage() {
                 {/* LinkedIn Post Mockup */}
                 <div className="border border-slate-200 rounded-xl p-4 bg-white space-y-3 shadow-2xs">
                   <div className="flex items-start gap-3">
-                    <img
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-                      alt="Mohit Upraity"
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={displayName}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {initials}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="font-bold text-xs text-slate-900">Mohit Upraity</h4>
+                        <h4 className="font-bold text-xs text-slate-900">{displayName}</h4>
                         <span className="text-[10px] text-slate-400">· 1st</span>
                       </div>
                       <p className="text-[11px] text-slate-500 truncate">
-                        AI Engineer | High-Performance Systems | DRDO Intern
+                        {targetHeadline}
                       </p>
                       <div className="flex items-center gap-1 text-[10px] text-slate-400">
                         <span>Just now</span>
@@ -408,7 +390,7 @@ export default function LinkedInAndPresencePage() {
                   </div>
 
                   <p className="text-xs text-slate-800 whitespace-pre-line leading-relaxed">
-                    {postDraft}
+                    {postDraft || 'Drop your daily engineering achievements above to generate or craft your authoritative LinkedIn post with verified proof metrics.'}
                   </p>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100 pt-2 font-mono">
@@ -505,45 +487,63 @@ export default function LinkedInAndPresencePage() {
           </div>
 
           <div className="space-y-3">
-            {scheduledPosts.map((p) => (
-              <div
-                key={p.id}
-                className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
-                      {p.category}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
-                      p.status === 'SCHEDULED' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {p.status}
-                    </span>
-                    <span className="text-xs font-mono text-slate-500 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {p.scheduledTime}
-                    </span>
+            {scheduledPosts.length > 0 ? (
+              scheduledPosts.map((p) => (
+                <div
+                  key={p.id}
+                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
+                        {p.category}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                        p.status === 'SCHEDULED' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {p.status}
+                      </span>
+                      <span className="text-xs font-mono text-slate-500 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {p.scheduledTime}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm text-slate-900">{p.title}</h4>
+                    <p className="text-xs text-slate-600 line-clamp-1">{p.content}</p>
                   </div>
-                  <h4 className="font-bold text-sm text-slate-900">{p.title}</h4>
-                  <p className="text-xs text-slate-600 line-clamp-1">{p.content}</p>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-mono text-xs text-emerald-600 font-bold">{p.forecastReach}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScheduledPosts(scheduledPosts.filter((x) => x.id !== p.id));
-                      triggerToast('Scheduled post cancelled.');
-                    }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-mono text-xs text-emerald-600 font-bold">{p.forecastReach}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScheduledPosts(scheduledPosts.filter((x) => x.id !== p.id));
+                        triggerToast('Scheduled post cancelled.');
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-16 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                <CalendarIcon className="w-8 h-8 text-slate-300 mx-auto" />
+                <h4 className="font-bold text-xs text-slate-700">No Scheduled Posts</h4>
+                <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                  Queue authoritative posts to automatically syndicate your engineering milestones.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold shadow-2xs mt-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create First Post</span>
+                </button>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

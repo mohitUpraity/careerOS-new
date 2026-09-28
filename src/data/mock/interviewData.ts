@@ -1,85 +1,90 @@
-export interface TranscriptEntry {
+export interface TranscriptTurn {
   id: string;
-  speaker: 'AI' | 'CANDIDATE';
+  speaker: 'INTERVIEWER' | 'CANDIDATE';
   speakerName: string;
   timestamp: string;
   content: string;
-  chips?: { label: string; type: 'positive' | 'warning' | 'info' }[];
+  chips?: { label: string; type: 'positive' | 'critical' | 'neutral' }[];
 }
 
-export const mockInterviewSession = {
-  id: 'sess_google_l6_01',
-  role: 'Google Senior AI Engineer (L5/L6)',
-  topic: 'Distributed Training & Inference Architecture (LLMs & Megatron-LM/vLLM)',
+export interface CompetencyScore {
+  name: string;
+  score: number;
+  color: string;
+  standard: string;
+}
+
+export interface TelemetrySignal {
+  title: string;
+  message: string;
+  type: 'info' | 'positive' | 'warning';
+}
+
+export interface QuestionStep {
+  step: number;
+  title: string;
+  score: string;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'UPCOMING';
+}
+
+export interface InterviewSessionData {
+  role: string;
+  topic?: string;
+  interviewerPersona?: string;
   interviewer: {
-    name: 'Dr. Sarah Lin',
-    title: 'Principal Infrastructure AI Evaluator',
-    affiliation: 'Synthetic Google Cloud Systems Agent',
-    sttEngine: 'Deepgram Nova-2 STT (99.4% Precision)',
+    name: string;
+    title: string;
+  };
+  benchmarkStandard: string;
+  timeElapsed: string;
+  timeTotal: string;
+  projectedScore: number | string;
+  projectedOutcome: string;
+  competencies: CompetencyScore[];
+  telemetrySignals: TelemetrySignal[];
+  questionStepper: QuestionStep[];
+  transcript: TranscriptTurn[];
+}
+
+export const mockInterviewSession: InterviewSessionData = {
+  role: 'AI / Software Systems Engineer',
+  topic: 'Real-time Distributed Systems & AI Inference Pipeline',
+  interviewerPersona: 'Staff AI Systems Architect',
+  interviewer: {
+    name: 'AI Evaluator',
+    title: 'Staff AI Systems Architect',
   },
-  timeElapsed: '24:18',
+  benchmarkStandard: 'Evaluation Standard: Production Architecture & Rigor',
+  timeElapsed: '00:00',
   timeTotal: '45:00',
-  benchmarkStandard: 'Staff L6 Standard',
-  projectedScore: 89,
-  projectedOutcome: 'STRONG HIRE (Top 4% L6 Benchmark)',
+  projectedScore: '--',
+  projectedOutcome: 'Calibrating initial candidate baseline upon first response.',
   competencies: [
-    { name: 'Distributed Systems Scalability', score: 88, standard: 'Exceeds L5 standard', color: 'bg-primary' },
-    { name: 'Latency & Hardware Tradeoffs', score: 92, standard: 'Staff level mastery', color: 'bg-emerald-600' },
-    { name: 'Fault Tolerance & Degradation', score: 74, standard: 'Needs clarification on node crash', color: 'bg-amber-600' },
-    { name: 'Technical Depth & RFC Framing', score: 91, standard: 'Structured RFC style', color: 'bg-primary' },
+    { name: 'System Architecture & Rigor', score: 0, color: 'bg-blue-600', standard: 'Production SLA Standard' },
+    { name: 'Algorithmic Complexity', score: 0, color: 'bg-indigo-600', standard: 'Time/Space Optimization' },
+    { name: 'Concurrency & Resilience', score: 0, color: 'bg-purple-600', standard: 'Fault-tolerant Protocols' },
+    { name: 'Tradeoff Communication', score: 0, color: 'bg-emerald-600', standard: 'Clear Engineering Rationale' },
   ],
   telemetrySignals: [
     {
-      type: 'warning',
-      title: 'Critical Gap Detected',
-      message: 'Memory bandwidth bottleneck unaddressed for sequence lengths >64k during draft verification.',
-    },
-    {
+      title: 'Real-time Speech & Code Active',
+      message: 'Microphone and code editor telemetry ready. Speak or submit code to receive instant rubric scoring.',
       type: 'info',
-      title: 'Experience Match',
-      message: 'Correlates with DRDO high-throughput packet pipeline on your verified profile (+6% signal).',
-    },
-    {
-      type: 'positive',
-      title: 'Production Standard Met',
-      message: 'Validated: vLLM PagedAttention tensor allocation satisfies Google production bar.',
     },
   ],
   questionStepper: [
-    { step: 1, title: 'System Context & Traffic Volumetrics', status: 'COMPLETED', score: '94%' },
-    { step: 2, title: 'Model Parallelism (Tensor vs Pipeline)', status: 'COMPLETED', score: '91%' },
-    { step: 3, title: 'KV Cache Memory & Throughput Optimization', status: 'IN_PROGRESS', score: 'Active' },
-    { step: 4, title: 'Network Straggler Mitigation & NCCL Tuning', status: 'UPCOMING', score: '—' },
+    { step: 1, title: 'Architecture Scope & Functional Requirements', score: 'PENDING', status: 'IN_PROGRESS' },
+    { step: 2, title: 'Data Flow & Storage Layer Design', score: '--', status: 'UPCOMING' },
+    { step: 3, title: 'Bottlenecks, Failure Modes & KV Scaling', score: '--', status: 'UPCOMING' },
   ],
   transcript: [
     {
-      id: 'tr_01',
-      speaker: 'AI' as const,
-      speakerName: 'Dr. Sarah Lin (Synthetic Evaluator)',
-      timestamp: '18:40',
-      content:
-        'Let’s drill into your KV-cache memory management strategy for a 100k context window across an 8x H100 cluster. How do you prevent fragmented page allocation and avoid NVLink synchronization bottlenecks during burst speculative decoding?',
-    },
-    {
-      id: 'tr_02',
-      speaker: 'CANDIDATE' as const,
-      speakerName: 'Mohit Upraity (Candidate)',
-      timestamp: '19:15',
-      content:
-        'We implement PagedAttention with non-contiguous virtual memory block allocation mapped to physical VRAM blocks of 64 tokens. To eliminate NVLink broadcast contention during speculative draft model verification, we decouple the prefill and decode stages onto separate GPU worker pools, allowing asynchronous draft verification over local HBM3e cache without stalling the tensor parallel ring.',
-      chips: [
-        { label: '+Strong Concept: PagedAttention', type: 'positive' as const },
-        { label: '+Cache Locality 94%', type: 'positive' as const },
-        { label: 'Attention: Watch Draft Sync Latency', type: 'warning' as const },
-      ],
-    },
-    {
-      id: 'tr_03',
-      speaker: 'AI' as const,
-      speakerName: 'Dr. Sarah Lin (Synthetic Evaluator)',
-      timestamp: '21:05',
-      content:
-        'Excellent articulation of prefill/decode disaggregation. If one worker node experiences a 40ms straggler jitter due to thermal throttling, how does your coordinator ensure p99 SLOs remain under 200ms?',
+      id: 'tr_init',
+      speaker: 'INTERVIEWER',
+      speakerName: 'AI Evaluator (Staff Architect)',
+      timestamp: '00:00',
+      content: 'Welcome to the CareerOS AI Interview Arena. When you are ready, state your architectural approach or click Start Live Round.',
+      chips: [{ label: 'Ready for Prompt', type: 'neutral' }],
     },
   ],
 };

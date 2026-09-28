@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { mockSkillsGraph, SkillNode } from '@/data/mock/skillsData';
 import { fetchSkillGraph, addEvidence, LiveSkillGraph, LiveSkill, LiveEvidence } from '@/lib/api';
+import KnowledgeGraph from '@/components/graph/KnowledgeGraph';
 
 interface EvidenceRecord {
   id: string;
@@ -43,113 +44,72 @@ interface EvidenceRecord {
 
 const initialEvidenceList: EvidenceRecord[] = [
   {
-    id: 'ev_1',
-    title: 'Zero-Copy Ring Buffer in eBPF / XDP',
-    category: 'Low-Level & Hardware',
-    type: 'GITHUB_PR',
-    provenance: 'github.com/mohitupraity/intelliguard-ngfw commit #9f84bc12',
-    verifiedDate: '2 hours ago',
-    metric: '4.8M packets/sec at 120ns latency',
-    hash: 'sha256:8f9a2b7c4d1e3f...',
-    astVerified: true,
-  },
-  {
-    id: 'ev_2',
-    title: 'Custom Triton CUDA Flash-Attention Kernel',
-    category: 'AI & ML Infra',
-    type: 'PRODUCTION_SYSTEM',
-    provenance: 'github.com/mohitupraity/flash-triton-v3 PR #14',
-    verifiedDate: 'Yesterday',
-    metric: '3.4x throughput speedup over PyTorch eager',
-    hash: 'sha256:1a2b3c4d5e6f7...',
-    astVerified: true,
-  },
-  {
-    id: 'ev_3',
-    title: 'Raft Distributed Consensus Engine in Rust',
+    id: 'ev-1',
+    title: 'PR #482: Lock-Free Raft Consensus Engine & Ring Buffer',
     category: 'Distributed Systems',
     type: 'GITHUB_PR',
-    provenance: 'github.com/mohitupraity/raft-rs commit #4b88de21',
-    verifiedDate: '3 days ago',
-    metric: 'Zero split-brain under 50% simulated network partition',
-    hash: 'sha256:7c8d9e0f1a2b3...',
+    provenance: 'GitHub • alexrivera-ai/novaflow • PR #482 (Merged)',
+    verifiedDate: '2d ago',
+    metric: '48% P99 latency reduction across 64 Kubernetes worker nodes',
+    hash: 'sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
     astVerified: true,
   },
   {
-    id: 'ev_4',
-    title: 'vLLM AWQ PagedAttention Benchmark Suite',
+    id: 'ev-2',
+    title: 'tensorgate-rs (v0.8.4) High-Throughput Token Gateway',
     category: 'AI & ML Infra',
-    type: 'PYPI_PACKAGE',
-    provenance: 'pypi.org/project/vllm-bench-eval release v1.2.0',
-    verifiedDate: '5 days ago',
-    metric: '18,500 downloads/month with 99.9% uptime test suite',
-    hash: 'sha256:3d4e5f6a7b8c9...',
+    type: 'PRODUCTION_SYSTEM',
+    provenance: 'Crates.io • crates.io/crates/tensorgate-rs',
+    verifiedDate: '4d ago',
+    metric: '120,000 QPS @ 4.2ms P99 with 0% packet drop',
+    hash: 'sha256:4d607dc9703c152a42de1761d47348911043328e1834f895c104e768cb4ab9fb',
     astVerified: true,
   },
   {
-    id: 'ev_5',
-    title: 'Deterministic Packet Inspection Engine Research Paper',
+    id: 'ev-3',
+    title: 'eBPF / XDP Network Telemetry & Zero-Copy Packet Filter',
     category: 'Networking & Security',
-    type: 'ARXIV_PAPER',
-    provenance: 'arXiv:2608.04912 [cs.NI]',
-    verifiedDate: '2 weeks ago',
-    metric: 'Published preprint, referenced in DRDO ADRDE research',
-    hash: 'sha256:9a8b7c6d5e4f3...',
+    type: 'PRODUCTION_SYSTEM',
+    provenance: 'GitHub • alexrivera-ai/ebpf-telemetry-engine',
+    verifiedDate: '1w ago',
+    metric: 'Kernel-space filtering processing 100Gbps network throughput',
+    hash: 'sha256:8899aabbccddeeff00112233445566778899aabbccddeeff0011223344556677',
     astVerified: true,
   },
+  {
+    id: 'ev-4',
+    title: 'ArXiv 2408.12901: Adaptive Quantization for MoE Routing',
+    category: 'AI & ML Infra',
+    type: 'ARXIV_PAPER',
+    provenance: 'arXiv • arxiv.org/abs/2408.12901',
+    verifiedDate: '2w ago',
+    metric: '1.4x memory footprint reduction with zero perplexity degradation',
+    hash: 'sha256:aa11bb22cc33dd44ee55ff6600778899aa11bb22cc33dd44ee55ff6600778899',
+    astVerified: true,
+  }
 ];
 
 const targetRoles = [
   {
     id: 'ai-infra',
     title: 'AI Infrastructure Engineer',
-    matchScore: 88,
+    matchScore: 90,
     marketDemand: 'Very High',
     salaryRange: '$180k - $240k',
     requiredSkills: [
-      { name: 'PyTorch / Triton', met: true, level: 'Advanced (94%)' },
-      { name: 'Distributed Systems / NCCL', met: true, level: 'Advanced (88%)' },
-      { name: 'vLLM & Inference Serving', met: true, level: 'Expert (92%)' },
-      { name: 'CUDA Kernel Tuning', met: false, level: 'Gap: Needs 1 more proof' },
-      { name: 'Kubernetes GPU Scheduling', met: false, level: 'Gap: No verified PR yet' },
+      { name: 'PyTorch / Triton', met: true, level: 'Advanced' },
+      { name: 'Distributed Systems', met: true, level: 'Advanced' },
+      { name: 'vLLM & Model Serving', met: true, level: 'Expert' },
+      { name: 'CUDA Kernel Tuning', met: true, level: 'Proficient' },
     ],
-    recommendedAction: 'Complete CUDA Stream Concurrency project in Projects module to achieve 96% match.',
-  },
-  {
-    id: 'dist-sys',
-    title: 'Distributed Systems Engineer',
-    matchScore: 92,
-    marketDemand: 'Extremely High',
-    salaryRange: '$190k - $260k',
-    requiredSkills: [
-      { name: 'Raft Consensus', met: true, level: 'Expert (96%)' },
-      { name: 'Rust / C++', met: true, level: 'Expert (94%)' },
-      { name: 'gRPC & Protocol Buffers', met: true, level: 'Advanced (90%)' },
-      { name: 'Jepsen Chaos Testing', met: true, level: 'Verified (86%)' },
-      { name: 'Distributed Transactions (2PC/Saga)', met: false, level: 'Gap: Add Jepsen test benchmark' },
-    ],
-    recommendedAction: 'Ready to apply! Top 5% profile across Scale AI, Databricks, and Anthropic candidate pools.',
-  },
-  {
-    id: 'kernel-sec',
-    title: 'Kernel & Systems Security Engineer',
-    matchScore: 95,
-    marketDemand: 'High',
-    salaryRange: '$175k - $235k',
-    requiredSkills: [
-      { name: 'eBPF / XDP', met: true, level: 'Elite (98%)' },
-      { name: 'Linux Kernel Internals', met: true, level: 'Expert (92%)' },
-      { name: 'C/C++ Memory Safety', met: true, level: 'Expert (94%)' },
-      { name: 'Zero-Copy Networking', met: true, level: 'Elite (96%)' },
-    ],
-    recommendedAction: 'Eligible for Direct Fast-Track Interview with 4 security infrastructure teams.',
+    recommendedAction: 'Keep evidence proofs updated via Onboarding and Evidence Connectors.',
   },
 ];
 
 export default function SkillsAndEvidencePage() {
-  const [skills, setSkills] = useState<SkillNode[]>(mockSkillsGraph);
+  const [skills, setSkills] = useState<SkillNode[]>(mockSkillsGraph.nodes);
   const [evidenceList, setEvidenceList] = useState<EvidenceRecord[]>(initialEvidenceList);
-  const [selectedSubTab, setSelectedSubTab] = useState<'Skills' | 'Evidence' | 'Role Fit' | 'Insights'>('Skills');
+  const [selectedSubTab, setSelectedSubTab] = useState<'Graph Topology' | 'Skills' | 'Evidence' | 'Role Fit' | 'Insights'>('Graph Topology');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [evidenceFilter, setEvidenceFilter] = useState<string>('ALL');
   const [evidenceSearch, setEvidenceSearch] = useState<string>('');
@@ -164,19 +124,10 @@ export default function SkillsAndEvidencePage() {
           id: s.id,
           name: s.name,
           category: (s.category as any) || 'AI & ML Infra',
-          level: s.proficiency > 90 ? 'Staff / Expert' : s.proficiency > 80 ? 'Senior' : 'Proficient',
+          proficiency: s.proficiency || 85,
           evidenceCount: s.proof_count || 1,
-          marketDemandScore: s.proficiency,
-          evidenceItems: liveGraph.evidence
-            .filter((e: LiveEvidence) => (e.skills_linked || []).includes(s.name))
-            .map((e: LiveEvidence) => ({
-              id: e.id,
-              title: e.title,
-              type: 'GITHUB_PR',
-              provenance: `${e.platform} • ${e.sha_hash || 'Verified'}`,
-              verifiedDate: 'Recent',
-              metric: e.metric_proof || 'AST verified',
-            })),
+          lastUpdated: 'Recent',
+          verifiedByAst: true,
         }));
 
         const mappedEvidence: EvidenceRecord[] = liveGraph.evidence.map((e: LiveEvidence) => ({
@@ -268,7 +219,7 @@ export default function SkillsAndEvidencePage() {
                 verifiedDate: 'Just Now',
                 metric: newRecord.metric,
               },
-              ...s.evidenceItems,
+              ...((s as any).evidenceItems || []),
             ],
           };
         }
@@ -353,7 +304,7 @@ export default function SkillsAndEvidencePage() {
 
       {/* Primary Sub-Tabs */}
       <div className="flex items-center gap-6 border-b border-slate-200 pb-2 text-xs">
-        {(['Skills', 'Evidence', 'Role Fit', 'Insights'] as const).map((tab) => (
+        {(['Graph Topology', 'Skills', 'Evidence', 'Role Fit', 'Insights'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -368,6 +319,25 @@ export default function SkillsAndEvidencePage() {
           </button>
         ))}
       </div>
+
+      {/* VIEW 0: GRAPH TOPOLOGY */}
+      {selectedSubTab === 'Graph Topology' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="font-bold text-base text-slate-900">Personal Knowledge Graph Canvas</h2>
+              <p className="text-xs text-slate-500">
+                Live NetworkX topological graph linking Candidate Persona, Target Roles, Verified AST Proofs, and Gemini RAG Vector Provenance.
+              </p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-mono text-[11px] font-bold border border-emerald-200 self-start sm:self-auto">
+              ● 60 FPS Dynamic Physics Engine
+            </span>
+          </div>
+
+          <KnowledgeGraph height="h-[740px]" />
+        </div>
+      )}
 
       {/* Top 3 Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -520,7 +490,7 @@ export default function SkillsAndEvidencePage() {
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xl font-bold font-mono text-slate-900">{node.marketDemandScore}%</span>
+                      <span className="text-xl font-bold font-mono text-slate-900">{node.proficiency}%</span>
                       <p className="text-[10px] text-slate-400 font-mono">AST Verified</p>
                     </div>
                   </div>
@@ -528,7 +498,7 @@ export default function SkillsAndEvidencePage() {
                   <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-3">
                     <div
                       className="bg-primary h-full rounded-full"
-                      style={{ width: `${node.marketDemandScore}%` }}
+                      style={{ width: `${node.proficiency}%` }}
                     ></div>
                   </div>
 
@@ -537,7 +507,7 @@ export default function SkillsAndEvidencePage() {
                     <p className="font-mono text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                       Verified Proof Artifacts
                     </p>
-                    {node.evidenceItems.map((ev) => (
+                    {(node.evidenceItems || []).map((ev: any) => (
                       <div
                         key={ev.id}
                         className="p-3 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100/80 transition-colors space-y-1"
@@ -575,6 +545,25 @@ export default function SkillsAndEvidencePage() {
                 </div>
               </div>
             ))}
+            {filteredSkills.length === 0 && (
+              <div className="p-12 text-center bg-white rounded-xl border border-slate-200 shadow-card col-span-2 flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">No verified skills in graph</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                    Upload your resume in Onboarding or connect GitHub to automatically extract and verify your core stack.
+                  </p>
+                </div>
+                <Link
+                  href="/onboarding"
+                  className="mt-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs"
+                >
+                  Go to Onboarding
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -651,6 +640,27 @@ export default function SkillsAndEvidencePage() {
                 </div>
               </div>
             ))}
+
+            {filteredEvidence.length === 0 && (
+              <div className="p-12 text-center bg-white rounded-xl border border-slate-200 shadow-card flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">Evidence Vault is empty</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                    No verified proof items recorded. Click &quot;Add Evidence&quot; above or connect GitHub in Connectors.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="mt-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs"
+                >
+                  Add Evidence Item
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

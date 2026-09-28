@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Briefcase,
@@ -20,8 +20,8 @@ import {
   MapPin,
   DollarSign,
   TrendingUp,
+  RefreshCw,
 } from 'lucide-react';
-import { mockOpportunities } from '@/data/mock/opportunitiesData';
 import { OpportunityItem } from '@/types';
 import { fetchOpportunities, LiveOpportunity } from '@/lib/api';
 
@@ -30,42 +30,48 @@ const categories = ['All', 'Jobs', 'Internships', 'Research', 'Scholarships'];
 export default function OpportunitiesPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [minMatch, setMinMatch] = useState(80);
-  const [opportunitiesList, setOpportunitiesList] = useState<OpportunityItem[]>(mockOpportunities);
-  const [selectedOpp, setSelectedOpp] = useState<OpportunityItem>(mockOpportunities[0]);
-  const [savedIds, setSavedIds] = useState<string[]>(['opp_anthropic_02']);
+  const [minMatch, setMinMatch] = useState(70);
+  const [opportunitiesList, setOpportunitiesList] = useState<OpportunityItem[]>([]);
+  const [selectedOpp, setSelectedOpp] = useState<OpportunityItem | null>(null);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isLiveFromDb, setIsLiveFromDb] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch live opportunities from Supabase PostgreSQL via FastAPI
-  React.useEffect(() => {
+  useEffect(() => {
     async function loadLiveOpportunities() {
-      const liveItems = await fetchOpportunities();
-      if (liveItems && liveItems.length > 0) {
-        const mapped: OpportunityItem[] = liveItems.map((opp: LiveOpportunity) => ({
-          id: opp.id,
-          title: opp.title,
-          company: opp.company,
-          location: opp.location,
-          type: (opp.category as any) || 'Jobs',
-          matchScore: opp.match_score,
-          fitVerdict: opp.match_reason || `${opp.match_score}% High Conviction Match`,
-          deadline: opp.deadline || 'Ongoing',
-          salary: opp.salary_range || 'Competitive',
-          verifiedEvidenceCount: opp.verified_evidence_required?.length || 2,
-          requiredSkills: (opp.hard_skills || []).map((skillName: string, idx: number) => ({
-            name: skillName,
-            matched: idx < 3,
-          })),
-          description: opp.match_reason || 'Verified opportunity matching your technical trajectory and AST evidence proofs.',
-          keyResponsibilities: opp.key_requirements || [],
-          benefits: ['$245k–$280k Base + Frontloaded Equity', 'Comprehensive healthcare & wellness', 'Flexible remote/hybrid work policy'],
-          applyUrl: opp.apply_url || 'https://careers.google.com',
-        }));
+      setIsLoading(true);
+      try {
+        const liveItems = await fetchOpportunities();
+        if (liveItems && liveItems.length > 0) {
+          const mapped: OpportunityItem[] = liveItems.map((opp: LiveOpportunity) => ({
+            id: opp.id,
+            title: opp.title,
+            company: opp.company,
+            location: opp.location,
+            type: (opp.category as any) || 'Jobs',
+            matchScore: opp.match_score,
+            fitVerdict: opp.match_reason || `${opp.match_score}% High Conviction Match`,
+            deadline: opp.deadline || 'Ongoing',
+            salary: opp.salary_range || 'Competitive',
+            verifiedEvidenceCount: opp.verified_evidence_required?.length || 0,
+            requiredSkills: (opp.hard_skills || []).map((skillName: string, idx: number) => ({
+              name: skillName,
+              matched: idx < 3,
+            })),
+            description: opp.match_reason || 'Verified opportunity matching your technical trajectory and AST evidence proofs.',
+            keyResponsibilities: opp.key_requirements || [],
+            benefits: ['Competitive Base + Performance Bonus', 'Comprehensive healthcare & wellness', 'Flexible work policy'],
+            applyUrl: opp.apply_url || 'https://careers.google.com',
+          }));
 
-        setOpportunitiesList(mapped);
-        setSelectedOpp(mapped[0]);
-        setIsLiveFromDb(true);
+          setOpportunitiesList(mapped);
+          setSelectedOpp(mapped[0]);
+        }
+      } catch (err) {
+        console.warn('Failed to load opportunities:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadLiveOpportunities();
@@ -170,7 +176,7 @@ export default function OpportunitiesPage() {
               <span>Min Match:</span>
               <input
                 type="range"
-                min="70"
+                min="50"
                 max="95"
                 value={minMatch}
                 onChange={(e) => setMinMatch(Number(e.target.value))}
@@ -182,18 +188,18 @@ export default function OpportunitiesPage() {
         </div>
       </div>
 
-      {/* 2. Master-Detail Split Workspace (Left 60% / Right 40%) */}
+      {/* 2. Master-Detail Split Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT 7 COLUMNS: Master Opportunities List */}
         <div className="lg:col-span-7 space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500 font-mono px-1">
-            <span>Showing {filteredList.length} Opportunities matching your profile</span>
+            <span>Showing {filteredList.length} Live Opportunities</span>
             <span>Sorted by: Match Fit Score</span>
           </div>
 
           <div className="space-y-3">
             {filteredList.map((opp) => {
-              const isSelected = selectedOpp.id === opp.id;
+              const isSelected = selectedOpp?.id === opp.id;
               const isSaved = savedIds.includes(opp.id);
 
               return (
@@ -265,129 +271,148 @@ export default function OpportunitiesPage() {
               );
             })}
 
-            {filteredList.length === 0 && (
-              <div className="p-12 text-center bg-white rounded-xl border border-slate-200 shadow-card text-slate-400 text-sm">
-                No opportunities match your current filters. Try lowering the match threshold.
+            {filteredList.length === 0 && !isLoading && (
+              <div className="p-12 text-center bg-white rounded-xl border border-slate-200 shadow-card flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                  <Briefcase className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">No active opportunities in view</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                    {searchQuery ? 'Try broadening your search term or adjusting filters.' : 'Live market streams are synchronizing. Check back shortly or add custom tracking.'}
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* RIGHT 5 COLUMNS: Opportunity Detail Inspector */}
-        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-6 sticky top-20">
-          {/* Detail Header */}
-          <div className="space-y-2 pb-4 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[11px] font-bold">
-                {selectedOpp.type} • {selectedOpp.company}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-xs font-bold">
-                {selectedOpp.matchScore}% Fit Score
-              </span>
+        {selectedOpp ? (
+          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-6 sticky top-20">
+            {/* Detail Header */}
+            <div className="space-y-2 pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[11px] font-bold">
+                  {selectedOpp.type} • {selectedOpp.company}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-xs font-bold">
+                  {selectedOpp.matchScore}% Fit Score
+                </span>
+              </div>
+
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                {selectedOpp.title}
+              </h2>
+
+              <div className="flex items-center gap-3 text-xs text-slate-500 font-medium">
+                <span className="font-semibold text-slate-700">{selectedOpp.company}</span>
+                <span>•</span>
+                <span>{selectedOpp.location}</span>
+              </div>
+
+              <p className="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50/80 p-2 rounded-lg border border-emerald-100">
+                ⚡ {selectedOpp.fitVerdict}
+              </p>
             </div>
 
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              {selectedOpp.title}
-            </h2>
+            {/* Quick Action Clusters */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <Link
+                href="/resume"
+                className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Tailor Resume</span>
+              </Link>
 
-            <div className="flex items-center gap-3 text-xs text-slate-500 font-medium">
-              <span className="font-semibold text-slate-700">{selectedOpp.company}</span>
-              <span>•</span>
-              <span>{selectedOpp.location}</span>
+              <Link
+                href="/interview-arena"
+                className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs transition-colors"
+              >
+                <Radio className="w-4 h-4" />
+                <span>Mock Interview</span>
+              </Link>
             </div>
 
-            <p className="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50/80 p-2 rounded-lg border border-emerald-100">
-              ⚡ {selectedOpp.fitVerdict}
-            </p>
-          </div>
-
-          {/* Quick Action Clusters */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <Link
-              href="/resume"
-              className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Tailor Resume</span>
-            </Link>
-
-            <Link
-              href="/interview-arena"
-              className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs transition-colors"
-            >
-              <Radio className="w-4 h-4" />
-              <span>Mock Interview</span>
-            </Link>
-          </div>
-
-          {/* Required Skills & Fit Breakdown */}
-          <div className="space-y-3">
-            <h4 className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Skills &amp; Evidence Fit Checklist
-            </h4>
-            <div className="space-y-2">
-              {selectedOpp.requiredSkills.map((skill, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
-                >
-                  <span className="font-medium text-slate-800">{skill.name}</span>
-                  {skill.matched ? (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Matched
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded">
-                      <XCircle className="w-3.5 h-3.5 text-amber-600" /> Skill Gap
-                    </span>
-                  )}
+            {/* Required Skills & Fit Breakdown */}
+            {selectedOpp.requiredSkills.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Skills &amp; Evidence Fit Checklist
+                </h4>
+                <div className="space-y-2">
+                  {selectedOpp.requiredSkills.map((skill, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
+                    >
+                      <span className="font-medium text-slate-800">{skill.name}</span>
+                      {skill.matched ? (
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Matched
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded">
+                          <XCircle className="w-3.5 h-3.5 text-amber-600" /> Skill Gap
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            )}
 
-          {/* Role Overview & Responsibilities */}
-          <div className="space-y-3">
-            <h4 className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Role Scope &amp; Responsibilities
-            </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {selectedOpp.description}
+            {/* Role Overview & Responsibilities */}
+            <div className="space-y-3">
+              <h4 className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Role Scope &amp; Responsibilities
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {selectedOpp.description}
+              </p>
+              {selectedOpp.keyResponsibilities.length > 0 && (
+                <ul className="space-y-1.5 text-xs text-slate-600">
+                  {selectedOpp.keyResponsibilities.map((resp, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-primary font-bold">•</span>
+                      <span>{resp}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Compensation & Benefits */}
+            <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <h4 className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Compensation Package
+              </h4>
+              <p className="text-sm font-bold text-slate-900 font-mono">{selectedOpp.salary}</p>
+            </div>
+
+            {/* External Apply Link */}
+            <a
+              href={selectedOpp.applyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+            >
+              <span>Open Direct Application URL</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        ) : (
+          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-8 shadow-card text-center flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800">Select an Opportunity</h3>
+            <p className="text-xs text-slate-500 max-w-xs">
+              Click on any opportunity card on the left to inspect requirements, evidence match checklist, and tailoring options.
             </p>
-            <ul className="space-y-1.5 text-xs text-slate-600">
-              {selectedOpp.keyResponsibilities.map((resp, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-primary font-bold">•</span>
-                  <span>{resp}</span>
-                </li>
-              ))}
-            </ul>
           </div>
-
-          {/* Compensation & Benefits */}
-          <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <h4 className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Compensation Package
-            </h4>
-            <p className="text-sm font-bold text-slate-900 font-mono">{selectedOpp.salary}</p>
-            <div className="space-y-1 mt-1 text-xs text-slate-600">
-              {selectedOpp.benefits.map((b, i) => (
-                <p key={i}>✓ {b}</p>
-              ))}
-            </div>
-          </div>
-
-          {/* External Apply Link */}
-          <a
-            href={selectedOpp.applyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
-          >
-            <span>Open Direct Application URL</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
+        )}
       </div>
 
       {/* Floating Toast Notification */}

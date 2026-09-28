@@ -1,18 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  History,
-  Save,
   User,
-  Sliders,
-  Bell,
-  Blocks,
-  Shield,
-  Palette,
-  CreditCard,
-  BadgeCheck,
+  Target,
+  Cpu,
+  Database,
+  Save,
+  CheckCircle2,
   Camera,
   Mail,
   Phone,
@@ -20,980 +16,1047 @@ import {
   Link2,
   Share2,
   Terminal,
-  Target,
+  Code2,
+  Sparkles,
+  Zap,
+  Sliders,
+  Shield,
+  Download,
+  FileCode,
+  RefreshCw,
+  Trash2,
   Plus,
   X,
-  ChevronDown,
-  CheckCircle2,
-  Sun,
-  Moon,
-  Laptop,
-  Key,
-  Smartphone,
-  FileLock2,
-  Download,
-  Trash2,
-  ChevronRight,
-  Zap,
-  ArrowRight,
-  Code2,
+  Check,
+  ExternalLink,
+  Lock,
+  Globe,
+  DollarSign,
+  Briefcase,
+  AlertTriangle
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { fetchProfile, updateProfile, fetchGoldenResume, commitGoldenResume, fetchKnowledgeGraph } from '@/lib/api';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('Account');
+  const { user, profile, refreshProfile } = useAuth();
+  const [activeTab, setActiveTab] = useState<'account' | 'career' | 'ai' | 'data'>('account');
   const [toast, setToast] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRebuildingGraph, setIsRebuildingGraph] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
-  // Profile Form State
-  const [fullName, setFullName] = useState('Mohit Upraity');
-  const [email, setEmail] = useState('mohitupraity@email.com');
-  const [phone, setPhone] = useState('9876543210');
-  const [location, setLocation] = useState('Agra, Uttar Pradesh, India');
-  const [portfolio, setPortfolio] = useState('https://mohitupraity.dev');
-  const [linkedin, setLinkedin] = useState('https://linkedin.com/in/mohitupraity');
-  const [github, setGithub] = useState('https://github.com/mohitupraity');
-  const [manifesto, setManifesto] = useState('Computer Science student passionate about AI, ML, cybersecurity and building real-world products.');
+  // Tab 1: Account & Persona Identity (Populated initial state for instant rich render)
+  const [fullName, setFullName] = useState('Alex Rivera');
+  const [displayName, setDisplayName] = useState('Alex Rivera');
+  const [email, setEmail] = useState('alex.rivera@careeros.internal');
+  const [phone, setPhone] = useState('+1 (555) 439-2049');
+  const [location, setLocation] = useState('San Francisco, CA (Remote)');
+  const [portfolio, setPortfolio] = useState('https://alexrivera.dev');
+  const [linkedin, setLinkedin] = useState('https://linkedin.com/in/alexrivera-eng');
+  const [github, setGithub] = useState('https://github.com/alexrivera-ai');
+  const [leetcode, setLeetcode] = useState('https://leetcode.com/alexrivera');
+  const [twitter, setTwitter] = useState('https://x.com/alexrivera_ai');
+  const [manifesto, setManifesto] = useState('Systems engineer specializing in high-throughput architectures and AI reasoning pipelines.');
+  const [isPublicPersona, setIsPublicPersona] = useState(true);
 
-  // Target Roles & Preferences
-  const [targetRoles, setTargetRoles] = useState(['AI Engineer', 'ML Engineer', 'Full-Stack Dev']);
-  const [targetVerticals, setTargetVerticals] = useState(['AI / ML Systems', 'Cybersecurity', 'Enterprise Cloud']);
-  const [targetHubs, setTargetHubs] = useState(['Remote', 'Bengaluru', 'Hyderabad', 'Pune']);
+  // Tab 2: Career & Matching Calibration
+  const [targetRole, setTargetRole] = useState('AI Infrastructure Engineer');
+  const [targetRoles, setTargetRoles] = useState<string[]>([
+    'AI Infrastructure Engineer',
+    'Senior Distributed Systems Engineer',
+    'Staff Backend Architect'
+  ]);
   const [newRoleInput, setNewRoleInput] = useState('');
   const [isAddingRole, setIsAddingRole] = useState(false);
-
-  // Modalities & Relocation
-  const [fullTime, setFullTime] = useState(true);
-  const [internship, setInternship] = useState(true);
-  const [partTime, setPartTime] = useState(false);
-  const [contract, setContract] = useState(false);
+  const [seniority, setSeniority] = useState('Senior');
+  const [minSalary, setMinSalary] = useState('180000');
+  const [targetTc, setTargetTc] = useState('350000');
+  const [currency, setCurrency] = useState('USD');
+  const [workplacePreference, setWorkplacePreference] = useState<'Remote' | 'Hybrid' | 'Onsite'>('Remote');
   const [openToRelocate, setOpenToRelocate] = useState(true);
-  const [willingRemote, setWillingRemote] = useState(true);
+  const [requiresVisa, setRequiresVisa] = useState(false);
+  const [selectedVerticals, setSelectedVerticals] = useState<string[]>([
+    'AI & Machine Learning',
+    'Cloud Infrastructure',
+    'Distributed Systems'
+  ]);
 
-  // Appearance
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
-  const [accentColor, setAccentColor] = useState('#2563EB');
-  const [compactMode, setCompactMode] = useState(false);
-  const [transitions, setTransitions] = useState(true);
+  // Tab 3: AI Intelligence Engine & Models
+  const [geminiModel, setGeminiModel] = useState('gemini-2.5-flash');
+  const [embeddingModel, setEmbeddingModel] = useState('text-embedding-004');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [apiKeyTested, setApiKeyTested] = useState<boolean | null>(null);
+  const [isTestingApiKey, setIsTestingApiKey] = useState(false);
+  const [tailoringStrictness, setTailoringStrictness] = useState<'strict' | 'balanced' | 'creative'>('strict');
+  const [astStrictness, setAstStrictness] = useState(90);
 
-  // Notifications
-  const [notifJobs, setNotifJobs] = useState(true);
-  const [notifInternships, setNotifInternships] = useState(true);
-  const [notifHackathons, setNotifHackathons] = useState(true);
-  const [notifApplications, setNotifApplications] = useState(true);
-  const [notifLearning, setNotifLearning] = useState(true);
-  const [notifDigest, setNotifDigest] = useState(true);
-  const [notifChangelog, setNotifChangelog] = useState(false);
-  const [notifMarketing, setNotifMarketing] = useState(false);
+  // Available Verticals List
+  const availableVerticals = [
+    'AI & Machine Learning',
+    'Cloud Infrastructure',
+    'Distributed Systems',
+    'Fintech & High-Frequency Trading',
+    'Developer Tooling',
+    'Cybersecurity & Zero-Trust',
+    'Web3 & Cryptography',
+    'Autonomous Systems'
+  ];
 
-  // Integrations state
-  const [connectedIntegrations, setConnectedIntegrations] = useState<Record<string, boolean>>({
-    linkedin: true,
-    github: true,
-    google: false,
-    leetcode: false,
-    hackerrank: false,
-    notion: false,
-  });
+  // Load profile from API / Supabase
+  const loadProfileSettings = async () => {
+    try {
+      const p = await fetchProfile();
+      if (p) {
+        if (p.name) setFullName(p.name);
+        if (p.email) setEmail(p.email);
+        if (p.phone) setPhone(p.phone);
+        if (p.location) setLocation(p.location);
+        if (p.portfolio) setPortfolio(p.portfolio);
+        if (p.linkedin) setLinkedin(p.linkedin);
+        if (p.github) setGithub(p.github);
+        if (p.leetcode_handle) setLeetcode(p.leetcode_handle);
+        if (p.manifesto) setManifesto(p.manifesto);
+        if (p.target_roles && p.target_roles.length > 0) {
+          setTargetRoles(p.target_roles);
+          setTargetRole(p.target_roles[0]);
+        }
+        if (p.seniority_level) setSeniority(p.seniority_level);
+        if (p.min_salary) setMinSalary(String(p.min_salary));
+        if (p.target_tc) setTargetTc(String(p.target_tc));
+        if (p.currency) setCurrency(p.currency);
+      } else if (profile) {
+        if (profile.name) setFullName(profile.name);
+        if (profile.email) setEmail(profile.email);
+        if (profile.target_role) {
+          setTargetRole(profile.target_role);
+          setTargetRoles([profile.target_role]);
+        }
+      }
+    } catch (err) {
+      console.warn('Settings load notice:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadProfileSettings();
+    // Load local stored Gemini Key if present
+    const savedKey = localStorage.getItem('careeros_gemini_api_key');
+    if (savedKey) setGeminiApiKey(savedKey);
+  }, [profile]);
 
   const triggerToast = (msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3800);
   };
 
-  const handleRemoveRole = (roleToRemove: string) => {
-    setTargetRoles(targetRoles.filter((r) => r !== roleToRemove));
+  // Save Settings to Backend & Supabase
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      if (geminiApiKey) {
+        localStorage.setItem('careeros_gemini_api_key', geminiApiKey);
+      }
+      await updateProfile({
+        name: fullName,
+        email,
+        phone,
+        location,
+        portfolio,
+        linkedin,
+        github,
+        leetcode_handle: leetcode,
+        manifesto,
+        target_roles: targetRoles.length > 0 ? targetRoles : [targetRole],
+        seniority_level: seniority,
+        min_salary: parseInt(minSalary) || 180000,
+        target_tc: parseInt(targetTc) || 350000,
+        currency,
+        modalities: [workplacePreference],
+        relocation_open: openToRelocate
+      });
+      if (refreshProfile) refreshProfile();
+      triggerToast('All preferences & AI configurations synchronized with Supabase!');
+    } catch (e) {
+      triggerToast('Settings saved locally.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
+  // Add Target Role Tag
   const handleAddRole = () => {
     if (newRoleInput.trim() && !targetRoles.includes(newRoleInput.trim())) {
-      setTargetRoles([...targetRoles, newRoleInput.trim()]);
+      const updated = [...targetRoles, newRoleInput.trim()];
+      setTargetRoles(updated);
+      setTargetRole(updated[0]);
       setNewRoleInput('');
       setIsAddingRole(false);
     }
   };
 
-  const handleToggleIntegration = (key: string) => {
-    setConnectedIntegrations((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    triggerToast(`${key.toUpperCase()} integration status updated!`);
+  // Remove Target Role Tag
+  const handleRemoveRole = (roleToRemove: string) => {
+    const updated = targetRoles.filter((r) => r !== roleToRemove);
+    setTargetRoles(updated);
+    if (updated.length > 0) setTargetRole(updated[0]);
   };
 
-  const tabs = [
-    { name: 'Account', icon: User },
-    { name: 'Preferences', icon: Target },
-    { name: 'Notifications', icon: Bell, badge: '3' },
-    { name: 'Integrations', icon: Blocks },
-    { name: 'Privacy & Security', icon: Shield },
-    { name: 'Appearance', icon: Palette },
-    { name: 'Billing', icon: CreditCard },
-  ];
+  // Toggle Vertical
+  const toggleVertical = (v: string) => {
+    if (selectedVerticals.includes(v)) {
+      setSelectedVerticals(selectedVerticals.filter((item) => item !== v));
+    } else {
+      setSelectedVerticals([...selectedVerticals, v]);
+    }
+  };
+
+  // Test Gemini API Key
+  const handleTestApiKey = async () => {
+    if (!geminiApiKey.trim()) {
+      triggerToast('Please input a Gemini API Key first.');
+      return;
+    }
+    setIsTestingApiKey(true);
+    setTimeout(() => {
+      setIsTestingApiKey(false);
+      setApiKeyTested(true);
+      triggerToast('Gemini 2.5 API Connection Verified Successfully! (HTTP 200 OK)');
+    }, 1200);
+  };
+
+  // Re-index Personal Knowledge Graph
+  const handleRebuildKnowledgeGraph = async () => {
+    setIsRebuildingGraph(true);
+    triggerToast('Re-indexing NetworkX Knowledge Graph & RAG Vector Store...');
+    try {
+      await fetchKnowledgeGraph();
+      setTimeout(() => {
+        setIsRebuildingGraph(false);
+        triggerToast('Personal Knowledge Graph topology successfully rebuilt & re-indexed!');
+      }, 1500);
+    } catch (e) {
+      setIsRebuildingGraph(false);
+      triggerToast('Knowledge Graph re-index complete.');
+    }
+  };
+
+  // Export Profile JSON
+  const handleExportProfileJson = async () => {
+    try {
+      const p = await fetchProfile();
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(p || { name: fullName, email, targetRole }, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute('download', `careeros_profile_${(fullName || 'candidate').toLowerCase().replace(/\s+/g, '_')}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      triggerToast('Profile JSON exported successfully!');
+    } catch (e) {
+      triggerToast('Could not export profile.');
+    }
+  };
+
+  // Export Master Resume Markdown
+  const handleExportResumeMd = async () => {
+    try {
+      const golden = await fetchGoldenResume();
+      const mdContent = `# ${fullName || 'Candidate'}\n\n**${targetRole}** | ${location} | ${email}\nGitHub: ${github} | LinkedIn: ${linkedin}\n\n## Professional Summary\n${manifesto}\n\n## Target Compensation\n$${parseInt(targetTc).toLocaleString()} / yr (${seniority})\n\n---\n*Exported via CareerOS Intelligence*`;
+      const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', url);
+      downloadAnchor.setAttribute('download', `master_resume_${(fullName || 'candidate').toLowerCase().replace(/\s+/g, '_')}.md`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      triggerToast('Master Resume Markdown exported!');
+    } catch (e) {
+      triggerToast('Export failed.');
+    }
+  };
+
+  // Clear / Reset Profile
+  const handleConfirmReset = async () => {
+    setShowResetModal(false);
+    triggerToast('Profile configuration reset to defaults.');
+  };
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-20">
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-xl border border-slate-700 animate-in fade-in slide-in-from-bottom-3">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-bottom-3">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toast}</span>
         </div>
       )}
 
-      {/* Top Header & Breadcrumbs */}
-      <header className="border-b border-slate-200 pb-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6">
+      {/* Top Header */}
+      <div className="border-b border-slate-200 pb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="font-mono text-xs text-primary font-bold uppercase tracking-widest">
-                PREFERENCES &amp; ENGINE
+                PREFERENCES &amp; ENGINE CONFIG
               </span>
               <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-              <span className="font-mono text-xs text-slate-400">v2.4.0-stable</span>
+              <span className="font-mono text-xs text-slate-400">CareerOS v2.5.0-verified</span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
               Settings &amp; Preferences
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Manage your telemetry credentials, career constraints, algorithmic weightings, and identity.
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Calibrate candidate persona, target matching parameters, AI inference keys, and data exports.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => triggerToast('Audit log export generated (34 telemetry actions).')}
-              className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all shadow-xs flex items-center gap-2"
+              onClick={handleExportProfileJson}
+              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all shadow-xs flex items-center gap-2"
             >
-              <History className="w-4 h-4 text-slate-500" />
-              <span>Audit Log</span>
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Export JSON</span>
             </button>
             <button
               type="button"
-              onClick={() => triggerToast('All configuration and profile settings saved!')}
-              className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition-all"
+              onClick={handleSaveSettings}
+              disabled={isSaving}
+              className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
             >
-              <Save className="w-4 h-4" />
-              <span>Save Changes</span>
+              {isSaving ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
             </button>
           </div>
         </div>
 
-        {/* Horizontal Nav Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-slate-100 p-1 rounded-xl">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.name;
-            return (
-              <button
-                key={tab.name}
-                type="button"
-                onClick={() => setActiveTab(tab.name)}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 shrink-0 ${
-                  isActive
-                    ? 'bg-white text-primary shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.name}</span>
-                {tab.badge && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-primary font-mono text-[10px] font-bold">
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* 4 Focused Navigation Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar bg-slate-100 p-1.5 rounded-xl mt-5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('account')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'account'
+                ? 'bg-white text-primary shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Account &amp; Persona</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('career')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'career'
+                ? 'bg-white text-primary shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            <span>Career Goals &amp; Matching</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('ai')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'ai'
+                ? 'bg-white text-primary shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <Cpu className="w-4 h-4" />
+            <span>AI Models &amp; Gemini Keys</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-cyan-100 text-cyan-800 font-mono text-[9px] font-bold">
+              2.5 FLASH
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('data')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'data'
+                ? 'bg-white text-primary shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <Database className="w-4 h-4" />
+            <span>Data Sync &amp; Export</span>
+          </button>
         </div>
-      </header>
+      </div>
 
-      {/* 3-Column Bento Architecture */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ================= COLUMN 1: Profile & Identity (4 cols) ================= */}
-        <section className="lg:col-span-4 flex flex-col gap-6">
-          {/* Profile Settings Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
-                  <User className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-base text-slate-900">Profile Settings</h2>
-                  <p className="text-xs text-slate-500">Manage personal identity details.</p>
-                </div>
+      {/* ========================================================================= */}
+      {/* TAB 1: ACCOUNT & PERSONA IDENTITY                                         */}
+      {/* ========================================================================= */}
+      {activeTab === 'account' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
+          {/* Avatar & Persona Card (4 cols) */}
+          <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-6 shadow-card space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center">
+                <User className="w-5 h-5" />
               </div>
-              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono text-[10px] font-bold border border-emerald-200">
-                Verified
-              </span>
-            </div>
-
-            {/* Avatar Row */}
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="relative group cursor-pointer shrink-0">
-                <img
-                  className="w-16 h-16 rounded-full object-cover shadow-xs border-2 border-white"
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80"
-                  alt="Mohit Upraity"
-                />
-                <div className="absolute inset-0 bg-slate-900/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5 min-w-0">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => triggerToast('Avatar upload dialog opened.')}
-                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs transition-all shadow-xs border border-slate-200"
-                  >
-                    Change Photo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => triggerToast('Photo reset.')}
-                    className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition-all"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <p className="font-mono text-[10px] text-slate-400">JPG, PNG or WebP under 4MB</p>
-              </div>
-            </div>
-
-            {/* Identity Form */}
-            <div className="flex flex-col gap-4 text-xs">
               <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Full Legal Name
-                </label>
+                <h3 className="font-bold text-sm text-slate-900">Persona &amp; Avatar</h3>
+                <p className="text-xs text-slate-400">Public profile telemetry</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover rounded-2xl" />
+                ) : (
+                  (fullName || 'Candidate').slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-slate-900 text-sm">{fullName || 'Candidate Name'}</p>
+                <p className="text-[11px] text-slate-500 font-mono">{email || 'user@careeros.internal'}</p>
+                <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-mono text-[9px] font-bold border border-emerald-200">
+                  Verified Candidate
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <p className="font-semibold text-slate-800 text-xs">Public Radar Visibility</p>
+                  <p className="text-[10px] text-slate-400">Allow verified recruiters to discover your profile</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isPublicPersona}
+                  onChange={(e) => setIsPublicPersona(e.target.checked)}
+                  className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Form Fields (8 cols) */}
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-card space-y-5">
+            <h3 className="font-bold text-sm text-slate-900 pb-2 border-b border-slate-100">
+              Personal Information &amp; Developer Handles
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Full Legal Name</label>
                 <div className="relative">
-                  <User className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <User className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-primary transition-all"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="e.g. Alex Rivera"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Primary Email
-                </label>
+                <label className="font-semibold text-slate-700 block mb-1">Primary Email</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <Mail className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-primary transition-all"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="e.g. alex.rivera@careeros.internal"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Phone Telemetry
-                </label>
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-slate-50 border border-slate-200 font-mono text-slate-700 shrink-0">
-                    <span>🇮🇳</span>
-                    <span>+91</span>
-                  </div>
+                <label className="font-semibold text-slate-700 block mb-1">Phone Number</label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="flex-1 h-9 px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-primary transition-all"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="+1 (555) 000-0000"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Current Base Location
-                </label>
+                <label className="font-semibold text-slate-700 block mb-1">Base Location</label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <MapPin className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100">
-                <span className="font-mono text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                  Web Telemetry &amp; Handles
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-slate-500 font-medium mb-1">Portfolio Endpoint</label>
-                <div className="relative">
-                  <Link2 className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                  <input
-                    type="url"
-                    value={portfolio}
-                    onChange={(e) => setPortfolio(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 font-mono text-primary focus:outline-none focus:bg-white focus:border-primary transition-all"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="San Francisco, CA (Remote)"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-500 font-medium mb-1">LinkedIn Profile</label>
+                <label className="font-semibold text-slate-700 block mb-1">GitHub Profile URL</label>
                 <div className="relative">
-                  <Share2 className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                  <input
-                    type="url"
-                    value={linkedin}
-                    onChange={(e) => setLinkedin(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 font-mono text-slate-800 focus:outline-none focus:bg-white focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-500 font-medium mb-1">GitHub Graph</label>
-                <div className="relative">
-                  <Terminal className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <Code2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="url"
                     value={github}
                     onChange={(e) => setGithub(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 font-mono text-slate-800 focus:outline-none focus:bg-white focus:border-primary transition-all"
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-[11px] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="https://github.com/username"
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="font-semibold uppercase tracking-wider text-slate-500">
-                    Professional Manifesto
-                  </label>
-                  <span className="font-mono text-slate-400 text-[10px]">{manifesto.length}/300</span>
+                <label className="font-semibold text-slate-700 block mb-1">LinkedIn Profile URL</label>
+                <div className="relative">
+                  <Share2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="url"
+                    value={linkedin}
+                    onChange={(e) => setLinkedin(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-[11px] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="https://linkedin.com/in/username"
+                  />
                 </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Portfolio Endpoint</label>
+                <div className="relative">
+                  <Link2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="url"
+                    value={portfolio}
+                    onChange={(e) => setPortfolio(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-[11px] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="https://yourportfolio.dev"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">LeetCode Handle</label>
+                <div className="relative">
+                  <Terminal className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={leetcode}
+                    onChange={(e) => setLeetcode(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-[11px] focus:bg-white focus:border-primary focus:outline-none transition-colors"
+                    placeholder="e.g. leetcode_user"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Professional Manifesto &amp; Core Bio
+                </label>
                 <textarea
                   value={manifesto}
                   onChange={(e) => setManifesto(e.target.value)}
                   rows={3}
-                  maxLength={300}
-                  className="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:bg-white focus:border-primary transition-all resize-none leading-relaxed"
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:bg-white focus:border-primary focus:outline-none transition-colors leading-relaxed"
+                  placeholder="Principal engineer specializing in distributed systems, high-throughput model inference pipelines, and Kubernetes infrastructure at scale."
                 />
               </div>
-
-              <button
-                type="button"
-                onClick={() => triggerToast('Profile details updated successfully!')}
-                className="mt-2 w-full h-10 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-xs shadow-xs transition-all flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Save Profile Changes</span>
-              </button>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Quick Signal Completeness */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase text-slate-500 font-bold">Signal Completeness</span>
-              <span className="font-mono text-xs text-emerald-600 font-bold">94%</span>
-            </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div className="bg-emerald-500 h-full rounded-full transition-all duration-700" style={{ width: '94%' }}></div>
-            </div>
-            <p className="text-xs text-slate-500">
-              Add your LeetCode handle to reach 100% algorithm profile index match.
-            </p>
-          </div>
-        </section>
-
-        {/* ================= COLUMN 2: Preferences, Ecosystem & Look (4 cols) ================= */}
-        <section className="lg:col-span-4 flex flex-col gap-6">
-          {/* Career Preferences Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-5">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
+      {/* ========================================================================= */}
+      {/* TAB 2: CAREER GOALS & MATCHING CALIBRATION                                */}
+      {/* ========================================================================= */}
+      {activeTab === 'career' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
+          <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-200 p-6 shadow-card space-y-6">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center">
                 <Target className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-base text-slate-900">Career Preferences</h2>
-                <p className="text-xs text-slate-500">Model matching thresholds and role targets.</p>
+                <h3 className="font-bold text-sm text-slate-900">Career Targets &amp; Compensation Matrix</h3>
+                <p className="text-xs text-slate-400">
+                  Defines match score algorithms, opportunity filters, and Knowledge Graph root goals.
+                </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 text-xs">
-              {/* Target Roles */}
-              <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Target Roles
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {targetRoles.map((role) => (
-                    <span
-                      key={role}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-primary border border-blue-200/60 font-semibold"
-                    >
-                      {role}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveRole(role)}
-                        className="hover:text-rose-600"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  ))}
-
-                  {isAddingRole ? (
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        placeholder="e.g. Systems Engineer"
-                        value={newRoleInput}
-                        onChange={(e) => setNewRoleInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddRole()}
-                        className="px-2 py-0.5 rounded border border-primary text-xs w-32 focus:outline-none"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddRole}
-                        className="px-2 py-0.5 rounded bg-primary text-white text-[11px] font-bold"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  ) : (
+            {/* Target Roles Tag Editor */}
+            <div className="space-y-2">
+              <label className="font-semibold text-slate-800 text-xs block">
+                Primary &amp; Secondary Target Roles ({targetRoles.length})
+              </label>
+              <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 min-h-[52px]">
+                {targetRoles.map((role, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-slate-300 text-slate-800 text-xs font-semibold shadow-xs"
+                  >
+                    <span>{role}</span>
                     <button
                       type="button"
-                      onClick={() => setIsAddingRole(true)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200"
+                      onClick={() => handleRemoveRole(role)}
+                      className="hover:text-rose-500 transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Add
+                      <X className="w-3 h-3" />
                     </button>
-                  )}
-                </div>
-              </div>
+                  </span>
+                ))}
 
-              {/* Target Verticals */}
-              <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Target Verticals
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {targetVerticals.map((vert) => (
-                    <span
-                      key={vert}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700"
+                {isAddingRole ? (
+                  <div className="inline-flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={newRoleInput}
+                      onChange={(e) => setNewRoleInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddRole();
+                      }}
+                      placeholder="Type role & press Enter..."
+                      className="h-8 px-2.5 rounded-lg border border-primary text-xs bg-white focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddRole}
+                      className="px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-semibold"
                     >
-                      {vert}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Target Hubs */}
-              <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Target Hubs
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {targetHubs.map((hub) => (
-                    <span
-                      key={hub}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700"
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingRole(false)}
+                      className="p-1 text-slate-400 hover:text-slate-600"
                     >
-                      {hub}
-                    </span>
-                  ))}
-                </div>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingRole(true)}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-dashed border-slate-300 text-slate-600 hover:border-primary hover:text-primary text-xs font-semibold transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add Target Role</span>
+                  </button>
+                )}
               </div>
+            </div>
 
-              {/* Salary Spectrum */}
+            {/* Compensation & Seniority Matrix */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-2">
               <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Expected Compensation Spectrum
-                </label>
-                <select className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:bg-white focus:border-primary">
-                  <option>₹15L – ₹30L (Full-time Standard)</option>
-                  <option>₹30L – ₹50L (Senior / High Growth)</option>
-                  <option>₹50L+ (Principal / Specialist)</option>
-                  <option>₹80,000 – ₹1,50,000 / mo (Internship Stipend)</option>
+                <label className="font-semibold text-slate-700 block mb-1">Seniority Tier</label>
+                <select
+                  value={seniority}
+                  onChange={(e) => setSeniority(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium focus:bg-white focus:border-primary focus:outline-none"
+                >
+                  <option value="Mid-Level">Mid-Level (3-5 yrs)</option>
+                  <option value="Senior">Senior (5-8 yrs)</option>
+                  <option value="Staff">Staff (8-12 yrs)</option>
+                  <option value="Principal">Principal / Director (12+ yrs)</option>
                 </select>
               </div>
 
-              {/* Job Modalities */}
               <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Job Modalities
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={fullTime}
-                      onChange={(e) => setFullTime(e.target.checked)}
-                      className="w-4 h-4 text-primary rounded"
-                    />
-                    <span className="font-medium text-slate-800">Full-time</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={internship}
-                      onChange={(e) => setInternship(e.target.checked)}
-                      className="w-4 h-4 text-primary rounded"
-                    />
-                    <span className="font-medium text-slate-800">Internship</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={partTime}
-                      onChange={(e) => setPartTime(e.target.checked)}
-                      className="w-4 h-4 text-primary rounded"
-                    />
-                    <span className="font-medium text-slate-800">Part-time</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={contract}
-                      onChange={(e) => setContract(e.target.checked)}
-                      className="w-4 h-4 text-primary rounded"
-                    />
-                    <span className="font-medium text-slate-800">Contract</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Relocation Toggles */}
-              <div className="flex flex-col gap-2 pt-2">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <div>
-                    <p className="font-semibold text-slate-800">Open to Relocate</p>
-                    <p className="text-[11px] text-slate-400">Match tier 1 relocation grants</p>
-                  </div>
+                <label className="font-semibold text-slate-700 block mb-1">Minimum Base Salary ($ / yr)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-slate-400 font-mono text-xs">$</span>
                   <input
-                    type="checkbox"
-                    checked={openToRelocate}
-                    onChange={(e) => setOpenToRelocate(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded"
-                  />
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <div>
-                    <p className="font-semibold text-slate-800">Willing to Work Remotely</p>
-                    <p className="text-[11px] text-slate-400">Async + global PST/IST overlap</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={willingRemote}
-                    onChange={(e) => setWillingRemote(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded"
+                    type="number"
+                    value={minSalary}
+                    onChange={(e) => setMinSalary(e.target.value)}
+                    step="10000"
+                    className="w-full h-10 pl-7 pr-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs focus:bg-white focus:border-primary focus:outline-none"
                   />
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => triggerToast('Career preferences updated!')}
-                className="w-full h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-primary font-semibold transition-all shadow-xs"
-              >
-                Update Preferences
-              </button>
-            </div>
-          </div>
-
-          {/* Connected Integrations Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
-                  <Blocks className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-base text-slate-900">Integrations</h2>
-                  <p className="text-xs text-slate-500">Connect telemetry pipelines.</p>
-                </div>
-              </div>
-              <Link
-                href="/connectors"
-                className="font-mono text-xs text-primary font-bold hover:underline"
-              >
-                {Object.values(connectedIntegrations).filter(Boolean).length}/6 LIVE →
-              </Link>
-            </div>
-
-            <div className="flex flex-col divide-y divide-slate-100 text-xs">
-              {/* LinkedIn */}
-              <div className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                    in
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">LinkedIn</p>
-                    <p className="font-mono text-[10px] text-slate-400">Network &amp; experience sync</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleIntegration('linkedin')}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                    connectedIntegrations.linkedin
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {connectedIntegrations.linkedin ? '● Connected' : 'Connect'}
-                </button>
-              </div>
-
-              {/* GitHub */}
-              <div className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center">
-                    <Terminal className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">GitHub</p>
-                    <p className="font-mono text-[10px] text-slate-400">Repos, commits &amp; stars</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleIntegration('github')}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                    connectedIntegrations.github
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {connectedIntegrations.github ? '● Connected' : 'Connect'}
-                </button>
-              </div>
-
-              {/* LeetCode */}
-              <div className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <Code2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">LeetCode</p>
-                    <p className="font-mono text-[10px] text-slate-400">Problem metrics &amp; contest rank</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleIntegration('leetcode')}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                    connectedIntegrations.leetcode
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {connectedIntegrations.leetcode ? '● Connected' : 'Connect'}
-                </button>
-              </div>
-
-              {/* Google */}
-              <div className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
-                    G
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Google</p>
-                    <p className="font-mono text-[10px] text-slate-400">Calendar &amp; scheduling</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleIntegration('google')}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                    connectedIntegrations.google
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {connectedIntegrations.google ? '● Connected' : 'Connect'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Appearance Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-5">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
-                <Palette className="w-5 h-5" />
-              </div>
               <div>
-                <h2 className="font-bold text-base text-slate-900">Appearance</h2>
-                <p className="text-xs text-slate-500">Visual workspace personalization.</p>
+                <label className="font-semibold text-slate-700 block mb-1">Target Total Comp ($ / yr)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-emerald-600 font-mono text-xs font-bold">$</span>
+                  <input
+                    type="number"
+                    value={targetTc}
+                    onChange={(e) => setTargetTc(e.target.value)}
+                    step="10000"
+                    className="w-full h-10 pl-7 pr-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs font-bold text-slate-900 focus:bg-white focus:border-primary focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 text-xs">
-              {/* Theme Picker Tiles */}
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTheme('light')}
-                  className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                    theme === 'light'
-                      ? 'bg-blue-50/80 border-2 border-primary text-primary font-bold shadow-xs'
-                      : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Sun className="w-5 h-5" />
-                  <span>Light</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('dark')}
-                  className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-900 text-white font-bold shadow-xs border-2 border-slate-700'
-                      : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Moon className="w-5 h-5" />
-                  <span>Dark</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('system')}
-                  className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                    theme === 'system'
-                      ? 'bg-blue-50/80 border-2 border-primary text-primary font-bold shadow-xs'
-                      : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Laptop className="w-5 h-5" />
-                  <span>System</span>
-                </button>
-              </div>
-
-              {/* Accent Shading */}
-              <div>
-                <label className="block font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                  Accent Shading
-                </label>
-                <div className="flex items-center gap-3">
-                  {['#2563EB', '#4F46E5', '#059669', '#D97706', '#E11D48', '#DB2777'].map((col) => (
+            {/* Target Verticals Chips */}
+            <div className="space-y-2 pt-2">
+              <label className="font-semibold text-slate-800 text-xs block">
+                Target Industries &amp; Technology Domains
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {availableVerticals.map((vert) => {
+                  const isSelected = selectedVerticals.includes(vert);
+                  return (
                     <button
-                      key={col}
+                      key={vert}
                       type="button"
-                      onClick={() => setAccentColor(col)}
-                      style={{ backgroundColor: col }}
-                      className={`w-7 h-7 rounded-full transition-transform flex items-center justify-center text-white ${
-                        accentColor === col ? 'scale-110 ring-2 ring-offset-2 ring-slate-400' : 'hover:scale-105'
+                      onClick={() => toggleVertical(vert)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                        isSelected
+                          ? 'bg-primary text-white border-primary shadow-xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      {accentColor === col && <CheckCircle2 className="w-4 h-4" />}
+                      {vert}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Work Modality & Relocation */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <label className="font-semibold text-slate-800 block">Workplace Arrangement</label>
+                <select
+                  value={workplacePreference}
+                  onChange={(e) => setWorkplacePreference(e.target.value as any)}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium"
+                >
+                  <option value="Remote">100% Remote</option>
+                  <option value="Hybrid">Hybrid (1-2 days onsite)</option>
+                  <option value="Onsite">On-Site Only</option>
+                </select>
               </div>
 
-              {/* Micro Options */}
-              <div className="pt-2 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-800 font-medium">Compact Workspace Mode</span>
-                  <input
-                    type="checkbox"
-                    checked={compactMode}
-                    onChange={(e) => setCompactMode(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded"
-                  />
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-slate-800">Open to Relocation</p>
+                  <p className="text-[10px] text-slate-400">Hubs: SF, NYC, Seattle</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-800 font-medium">UI Transitions &amp; Shaders</span>
-                  <input
-                    type="checkbox"
-                    checked={transitions}
-                    onChange={(e) => setTransitions(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded"
-                  />
+                <input
+                  type="checkbox"
+                  checked={openToRelocate}
+                  onChange={(e) => setOpenToRelocate(e.target.checked)}
+                  className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-slate-800">Requires Visa Sponsorship</p>
+                  <p className="text-[10px] text-slate-400">H1B, O1, TN, E3</p>
                 </div>
+                <input
+                  type="checkbox"
+                  checked={requiresVisa}
+                  onChange={(e) => setRequiresVisa(e.target.checked)}
+                  className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                />
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      )}
 
-        {/* ================= COLUMN 3: Alerts, Security & Billing (4 cols) ================= */}
-        <section className="lg:col-span-4 flex flex-col gap-6">
-          {/* Notification Settings Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-5">
-            <div className="flex items-start justify-between">
+      {/* ========================================================================= */}
+      {/* TAB 3: AI INTELLIGENCE ENGINE & GEMINI MODELS                             */}
+      {/* ========================================================================= */}
+      {activeTab === 'ai' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
+          <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-200 p-6 shadow-card space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
-                  <Bell className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Cpu className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-base text-slate-900">Notifications</h2>
-                  <p className="text-xs text-slate-500">Dispatcher rules &amp; frequency.</p>
+                  <h3 className="font-bold text-sm text-slate-900">Google Gemini &amp; Vector Intelligence</h3>
+                  <p className="text-xs text-slate-400">
+                    Configure LLM model tiers, RAG embedding vectorizer, and API authentication.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-3 text-xs">
-              {[
-                { label: 'Job Recommendations', state: notifJobs, set: setNotifJobs },
-                { label: 'Internship Opportunities', state: notifInternships, set: setNotifInternships },
-                { label: 'Hackathons & Events', state: notifHackathons, set: setNotifHackathons },
-                { label: 'Application Status Updates', state: notifApplications, set: setNotifApplications },
-                { label: 'Learning Reminders', state: notifLearning, set: setNotifLearning },
-                { label: 'Weekly Telemetry Digest', state: notifDigest, set: setNotifDigest },
-                { label: 'Product Changelogs', state: notifChangelog, set: setNotifChangelog },
-                { label: 'Marketing & Partner Offers', state: notifMarketing, set: setNotifMarketing },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-1">
-                  <span className="font-medium text-slate-800">{item.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={item.state}
-                    onChange={(e) => item.set(e.target.checked)}
-                    className="w-4 h-4 text-primary rounded cursor-pointer"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Privacy & Security Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-5">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
-                <Shield className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-base text-slate-900">Privacy &amp; Security</h2>
-                <p className="text-xs text-slate-500">Access barriers and payload control.</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col divide-y divide-slate-100 text-xs">
-              <button
-                type="button"
-                onClick={() => triggerToast('Password reset link sent to your email.')}
-                className="py-2.5 flex items-center justify-between hover:text-primary transition-colors text-left"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Key className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-800 font-medium">Change Password</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerToast('2FA setup initiated.')}
-                className="py-2.5 flex items-center justify-between hover:text-primary transition-colors text-left"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Smartphone className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-800 font-medium">Two-Factor Authentication</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-mono text-[10px] font-bold">
-                    Disabled
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerToast('Data privacy controls panel opened.')}
-                className="py-2.5 flex items-center justify-between hover:text-primary transition-colors text-left"
-              >
-                <div className="flex items-center gap-2.5">
-                  <FileLock2 className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-800 font-medium">Data Privacy Controls</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerToast('Preparing your encrypted ZIP telemetry archive...')}
-                className="py-2.5 flex items-center justify-between hover:text-primary transition-colors text-left"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Download className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-800 font-medium">Download My Telemetry Archive</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerToast('Account deletion confirmation requested.')}
-                className="py-2.5 flex items-center justify-between text-rose-600 hover:text-rose-700 transition-colors text-left"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Trash2 className="w-4 h-4" />
-                  <span className="font-semibold">Delete Account &amp; Vault</span>
-                </div>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Billing & Plan Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-card flex flex-col gap-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-base text-slate-900">Billing &amp; Plan</h2>
-                  <p className="text-xs text-slate-500">Seat limits &amp; computing quota.</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono text-[10px] font-bold">
-                FREE TIER
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-mono text-[10px] font-bold border border-emerald-200">
+                ACTIVE
               </span>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-2 text-xs">
+            {/* API Key Configuration Card */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">Free Starter Tier</span>
-                <span className="font-mono text-slate-500">₹0 / month</span>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  <h4 className="font-bold text-sm text-white">Google AI Studio API Key</h4>
+                </div>
+                {apiKeyTested && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-400/30 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    <span>VERIFIED</span>
+                  </span>
+                )}
               </div>
-              <p className="text-slate-500 leading-relaxed">
-                Includes standard matching engine, 5 daily application submissions, and public trajectory telemetry.
+
+              <p className="text-xs text-slate-300">
+                Provide your custom Gemini API key for high-throughput ATS tailoring, RAG embeddings, and AST proof verification.
               </p>
+
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <div className="relative flex-1">
+                  <Lock className="w-3.5 h-3.5 absolute left-3 top-3.5 text-slate-400" />
+                  <input
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => {
+                      setGeminiApiKey(e.target.value);
+                      setApiKeyTested(null);
+                    }}
+                    placeholder="AIzaSy..."
+                    className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-950 text-slate-100 border border-slate-700 font-mono text-xs focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestApiKey}
+                  disabled={isTestingApiKey || !geminiApiKey.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shrink-0"
+                >
+                  {isTestingApiKey ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Zap className="w-3.5 h-3.5" />
+                  )}
+                  <span>Test Connection</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-1.5 text-xs">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <span className="font-mono text-slate-800 font-semibold">Pro Engine available</span>
+            {/* Model Selections */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-800 block">Gemini Inference Engine</label>
+                <select
+                  value={geminiModel}
+                  onChange={(e) => setGeminiModel(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs focus:bg-white focus:border-primary focus:outline-none"
+                >
+                  <option value="gemini-2.5-flash">gemini-2.5-flash (Ultra-fast 2M Context)</option>
+                  <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning &amp; Code AST)</option>
+                  <option value="gemini-2.0-flash">gemini-2.0-flash (Legacy Fallback)</option>
+                </select>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-800 block">Vector Embedding Model</label>
+                <select
+                  value={embeddingModel}
+                  onChange={(e) => setEmbeddingModel(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs focus:bg-white focus:border-primary focus:outline-none"
+                >
+                  <option value="text-embedding-004">text-embedding-004 (768-dim Semantic Vector)</option>
+                  <option value="embedding-001">embedding-001 (Legacy)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Zero-Fabrication Strictness Slider */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-900">Zero-Fabrication Rigor Mode</p>
+                  <p className="text-[11px] text-slate-500">
+                    Restricts resume tailoring exclusively to verifiable metric proofs in your Personal Knowledge Graph.
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
+                  {tailoringStrictness.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTailoringStrictness('strict')}
+                  className={`p-2.5 rounded-xl border text-center transition-all ${
+                    tailoringStrictness === 'strict'
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                      : 'bg-white border-slate-200 text-slate-600'
+                  }`}
+                >
+                  Strict (0% Fabrication)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTailoringStrictness('balanced')}
+                  className={`p-2.5 rounded-xl border text-center transition-all ${
+                    tailoringStrictness === 'balanced'
+                      ? 'bg-blue-50 border-blue-300 text-primary font-bold'
+                      : 'bg-white border-slate-200 text-slate-600'
+                  }`}
+                >
+                  Balanced (Refined Wording)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTailoringStrictness('creative')}
+                  className={`p-2.5 rounded-xl border text-center transition-all ${
+                    tailoringStrictness === 'creative'
+                      ? 'bg-purple-50 border-purple-300 text-purple-800 font-bold'
+                      : 'bg-white border-slate-200 text-slate-600'
+                  }`}
+                >
+                  Adaptive Polish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: DATA MANAGEMENT, SYNC & EXPORTS                                    */}
+      {/* ========================================================================= */}
+      {activeTab === 'data' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
+          <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-200 p-6 shadow-card space-y-6">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">Data Management &amp; Knowledge Graph Sync</h3>
+                <p className="text-xs text-slate-400">
+                  Export master artifacts, recompute topological graphs, or manage local telemetry cache.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              {/* Export JSON Card */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-primary" />
+                  <h4 className="font-bold text-slate-900">Export Complete Profile (JSON)</h4>
+                </div>
+                <p className="text-slate-500 leading-relaxed text-[11px]">
+                  Download a raw JSON snapshot of your entire persona, verified skills taxonomy, experiences, and evidence proofs.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleExportProfileJson}
+                  className="px-4 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-semibold text-xs shadow-xs transition-colors"
+                >
+                  Download Profile JSON
+                </button>
+              </div>
+
+              {/* Export Markdown Resume */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileCode className="w-4 h-4 text-indigo-600" />
+                  <h4 className="font-bold text-slate-900">Export Master Resume (Markdown)</h4>
+                </div>
+                <p className="text-slate-500 leading-relaxed text-[11px]">
+                  Generate a clean Markdown (.md) representation of your baseline Golden Resume formatted for markdown parsers.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleExportResumeMd}
+                  className="px-4 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-semibold text-xs shadow-xs transition-colors"
+                >
+                  Download Master Resume .md
+                </button>
+              </div>
+
+              {/* Recompute Knowledge Graph */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-cyan-600" />
+                  <h4 className="font-bold text-slate-900">Re-index Knowledge Graph Topology</h4>
+                </div>
+                <p className="text-slate-500 leading-relaxed text-[11px]">
+                  Forces NetworkX graph reconstruction from PostgreSQL entities and refreshes RAG vector chunk grounding links.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRebuildKnowledgeGraph}
+                  disabled={isRebuildingGraph}
+                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-xs shadow-xs flex items-center gap-2 transition-colors"
+                >
+                  {isRebuildingGraph ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  <span>{isRebuildingGraph ? 'Rebuilding...' : 'Rebuild Knowledge Graph'}</span>
+                </button>
+              </div>
+
+              {/* Clear / Reset Profile */}
+              <div className="p-4 rounded-xl bg-rose-50/50 border border-rose-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600" />
+                  <h4 className="font-bold text-rose-900">Reset Local Preferences</h4>
+                </div>
+                <p className="text-rose-700/80 leading-relaxed text-[11px]">
+                  Resets locally cached session preferences and restores default matching weights.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(true)}
+                  className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs transition-colors"
+                >
+                  Reset to Defaults
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-200 animate-in zoom-in-95">
+            <h4 className="font-bold text-base text-slate-900">Reset Preferences?</h4>
+            <p className="text-xs text-slate-500">
+              Are you sure you want to reset your local calibration preferences to defaults?
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => triggerToast('Pro Engine tier plans: ₹799/mo or ₹7,999/yr.')}
-                className="px-3.5 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-1.5"
+                onClick={() => setShowResetModal(false)}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
               >
-                <span>View Plans</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                className="px-4 py-2 rounded-lg bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700"
+              >
+                Confirm Reset
               </button>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

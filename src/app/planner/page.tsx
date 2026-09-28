@@ -53,87 +53,9 @@ interface HabitItem {
   days: boolean[]; // Mon - Sun
 }
 
-const initialTasks: PlannerTask[] = [
-  {
-    id: 't_1',
-    title: 'Read RAG Evaluation Techniques',
-    subtitle: 'Complete Chapter 3: Evaluation Metrics & TruLens',
-    tag: 'Learning',
-    duration: '45 min',
-    completedAt: '10:15 AM',
-    status: 'completed',
-  },
-  {
-    id: 't_2',
-    title: 'Update CareerOS Architecture Spec',
-    subtitle: 'Finalize RAG module and provenance graph design',
-    tag: 'Project',
-    duration: '30 min',
-    completedAt: '12:00 PM',
-    status: 'completed',
-  },
-  {
-    id: 't_3',
-    title: 'Apply to Google AI Systems Role',
-    subtitle: 'Tailor resume for Distributed Systems and submit application',
-    tag: 'Application',
-    duration: '40 min',
-    completedAt: null,
-    status: 'in_progress',
-  },
-  {
-    id: 't_4',
-    title: 'Practice 2 LeetCode Hard Flow Problems',
-    subtitle: 'Dinic Algorithm & Bipartite Matching benchmarks',
-    tag: 'Algorithms',
-    duration: '60 min',
-    completedAt: null,
-    status: 'pending',
-  },
-  {
-    id: 't_5',
-    title: 'Draft LinkedIn Post on eBPF Kernel Filtering',
-    subtitle: 'Share benchmark results of 4.8M pps throughput',
-    tag: 'Presence',
-    duration: '25 min',
-    completedAt: null,
-    status: 'pending',
-  },
-];
-
-const initialGoals: GoalItem[] = [
-  {
-    id: 'g_1',
-    title: 'Land High-Performance Systems Engineer Offer',
-    targetDate: 'Oct 31, 2026',
-    progress: 80,
-    category: 'Career Target',
-    keyResults: [
-      'Submit 15 top-tier tailored applications (12 done)',
-      'Pass 4 technical rounds with >90% Arena score (3 done)',
-      'Publish 2 verified OSS benchmarks (2 done)',
-    ],
-  },
-  {
-    id: 'g_2',
-    title: 'Master CUDA & GPU Kernel Architecture',
-    targetDate: 'Nov 15, 2026',
-    progress: 65,
-    category: 'Skill Mastery',
-    keyResults: [
-      'Write Triton Flash-Attention kernel (Done)',
-      'Profile CUDA memory coalescing and warp divergence (In Progress)',
-      'Complete 5 custom GPU kernel assignments (3 done)',
-    ],
-  },
-];
-
-const initialHabits: HabitItem[] = [
-  { id: 'h_1', name: 'LeetCode 1 Hard / 2 Mediums', streak: 14, days: [true, true, true, true, true, true, true] },
-  { id: 'h_2', name: '45m Deep Technical Reading', streak: 8, days: [true, true, true, true, true, false, true] },
-  { id: 'h_3', name: 'GitHub Commit / Proof Push', streak: 21, days: [true, true, true, true, true, true, true] },
-  { id: 'h_4', name: 'LinkedIn Engineering Post / Check-in', streak: 6, days: [true, true, true, true, false, true, false] },
-];
+const initialTasks: PlannerTask[] = [];
+const initialGoals: GoalItem[] = [];
+const initialHabits: HabitItem[] = [];
 
 export default function PlannerPage() {
   const [viewMode, setViewMode] = useState<'Day' | 'Week' | 'Month'>('Day');
@@ -146,13 +68,14 @@ export default function PlannerPage() {
   const [taskFilter, setTaskFilter] = useState<string>('ALL');
   const [taskSearch, setTaskSearch] = useState<string>('');
 
+  // Goals State
+  const [goals, setGoals] = useState<GoalItem[]>(initialGoals);
+
   // Habits State
   const [habits, setHabits] = useState<HabitItem[]>(initialHabits);
 
   // Notes State
-  const [notes, setNotes] = useState<string>(
-    '# Q3 Career Engineering Roadmap\n\n- Focus: Low latency distributed inference & eBPF networking\n- Scale AI Round 2: Revisit Raft election timeouts and log compaction\n- Anthropic Offer Review: Package comparison against $275k baseline'
-  );
+  const [notes, setNotes] = useState<string>('');
 
   // Add Task Modal
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
@@ -226,12 +149,22 @@ export default function PlannerPage() {
 
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
 
-  const scheduleEvents = [
-    { time: '09:00 AM', title: 'Deep Work: eBPF Filtering Pipeline', dur: '1h 30m', color: 'border-l-primary bg-blue-50/50' },
-    { time: '11:00 AM', title: 'RAG Context Precision Optimization', dur: '45m', color: 'border-l-emerald-500 bg-emerald-50/50' },
-    { time: '02:00 PM', title: 'Mock Interview Simulation (Arena)', dur: '1h 00m', color: 'border-l-purple-500 bg-purple-50/50' },
-    { time: '04:30 PM', title: 'Application Dossier Submission', dur: '30m', color: 'border-l-amber-500 bg-amber-50/50' },
-  ];
+  const scheduleEvents = tasks.map((t, idx) => {
+    const times = ['09:00 AM', '11:00 AM', '02:00 PM', '04:30 PM', '06:00 PM'];
+    const colors = [
+      'border-l-primary bg-blue-50/50',
+      'border-l-emerald-500 bg-emerald-50/50',
+      'border-l-purple-500 bg-purple-50/50',
+      'border-l-amber-500 bg-amber-50/50',
+      'border-l-indigo-500 bg-indigo-50/50',
+    ];
+    return {
+      time: times[idx % times.length],
+      title: t.title,
+      dur: t.duration,
+      color: colors[idx % colors.length],
+    };
+  });
 
   const filteredTasks = tasks.filter((t) => {
     const matchesFilter =
@@ -475,61 +408,79 @@ export default function PlannerPage() {
               </div>
 
               <div className="space-y-2.5">
-                {tasks.map((task) => {
-                  const isCompleted = task.status === 'completed';
-                  const isInProgress = task.status === 'in_progress';
-                  return (
-                    <div
-                      key={task.id}
-                      onClick={() => toggleTask(task.id)}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        isCompleted
-                          ? 'bg-slate-50 border-slate-100 opacity-75'
-                          : isInProgress
-                          ? 'bg-blue-50/60 border-blue-200/80'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div
-                          className={`w-5 h-5 mt-0.5 rounded flex items-center justify-center transition-colors shrink-0 ${
-                            isCompleted
-                              ? 'bg-emerald-500 text-white'
-                              : isInProgress
-                              ? 'border-2 border-primary'
-                              : 'border border-slate-300'
-                          }`}
-                        >
-                          {isCompleted && <Check className="w-3.5 h-3.5" />}
-                        </div>
-                        <div className="min-w-0">
-                          <h3
-                            className={`text-xs font-semibold leading-tight ${
-                              isCompleted ? 'line-through text-slate-500' : 'text-slate-900'
+                {tasks.length > 0 ? (
+                  tasks.map((task) => {
+                    const isCompleted = task.status === 'completed';
+                    const isInProgress = task.status === 'in_progress';
+                    return (
+                      <div
+                        key={task.id}
+                        onClick={() => toggleTask(task.id)}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
+                          isCompleted
+                            ? 'bg-slate-50 border-slate-100 opacity-75'
+                            : isInProgress
+                            ? 'bg-blue-50/60 border-blue-200/80'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div
+                            className={`w-5 h-5 mt-0.5 rounded flex items-center justify-center transition-colors shrink-0 ${
+                              isCompleted
+                                ? 'bg-emerald-500 text-white'
+                                : isInProgress
+                                ? 'border-2 border-primary'
+                                : 'border border-slate-300'
                             }`}
                           >
-                            {task.title}
-                          </h3>
-                          <p className="text-[11px] text-slate-400 mt-0.5 truncate">{task.subtitle}</p>
+                            {isCompleted && <Check className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="min-w-0">
+                            <h3
+                              className={`text-xs font-semibold leading-tight ${
+                                isCompleted ? 'line-through text-slate-500' : 'text-slate-900'
+                              }`}
+                            >
+                              {task.title}
+                            </h3>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">{task.subtitle}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0 text-xs">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px]">
+                            {task.tag}
+                          </span>
+                          <span className="font-mono text-[11px] text-slate-400">{task.duration}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => deleteTask(task.id, e)}
+                            className="p-1 rounded text-slate-400 hover:text-red-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-3 shrink-0 text-xs">
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px]">
-                          {task.tag}
-                        </span>
-                        <span className="font-mono text-[11px] text-slate-400">{task.duration}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => deleteTask(task.id, e)}
-                          className="p-1 rounded text-slate-400 hover:text-red-500"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="py-12 px-4 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                    <Clock className="w-8 h-8 text-slate-300 mx-auto" />
+                    <h3 className="font-bold text-xs text-slate-700">No Agenda Tasks Today</h3>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                      Plan deep work blocks, interview rehearsals, or technical reading.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddTaskModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold shadow-2xs mt-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add First Task</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -537,22 +488,28 @@ export default function PlannerPage() {
             <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 shadow-card p-6 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <h2 className="font-bold text-base text-slate-900">Today's Timeline Blocks</h2>
-                <span className="font-mono text-[11px] text-slate-400">4 Events Scheduled</span>
+                <span className="font-mono text-[11px] text-slate-400">{scheduleEvents.length} Events Scheduled</span>
               </div>
 
               <div className="space-y-3">
-                {scheduleEvents.map((evt, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3.5 rounded-xl border border-l-4 ${evt.color} space-y-1`}
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono font-bold text-slate-800">{evt.time}</span>
-                      <span className="font-mono text-[11px] text-slate-500">{evt.dur}</span>
+                {scheduleEvents.length > 0 ? (
+                  scheduleEvents.map((evt, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-3.5 rounded-xl border border-l-4 ${evt.color} space-y-1`}
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-mono font-bold text-slate-800">{evt.time}</span>
+                        <span className="font-mono text-[11px] text-slate-500">{evt.dur}</span>
+                      </div>
+                      <h4 className="font-bold text-xs text-slate-900">{evt.title}</h4>
                     </div>
-                    <h4 className="font-bold text-xs text-slate-900">{evt.title}</h4>
+                  ))
+                ) : (
+                  <div className="py-8 text-center border border-dashed border-slate-200 rounded-xl text-xs text-slate-400 font-medium">
+                    Timeline clear — add tasks to populate scheduled time blocks
                   </div>
-                ))}
+                )}
               </div>
 
               <div className="pt-2">
@@ -583,31 +540,36 @@ export default function PlannerPage() {
 
           {viewMode === 'Day' && (
             <div className="space-y-3">
-              {scheduleEvents.map((evt, idx) => (
-                <div key={idx} className={`p-4 rounded-xl border border-l-4 ${evt.color} flex items-center justify-between`}>
-                  <div>
-                    <span className="font-mono text-xs text-slate-500 font-bold">{evt.time} ({evt.dur})</span>
-                    <h4 className="font-bold text-sm text-slate-900 mt-0.5">{evt.title}</h4>
+              {scheduleEvents.length > 0 ? (
+                scheduleEvents.map((evt, idx) => (
+                  <div key={idx} className={`p-4 rounded-xl border border-l-4 ${evt.color} flex items-center justify-between`}>
+                    <div>
+                      <span className="font-mono text-xs text-slate-500 font-bold">{evt.time} ({evt.dur})</span>
+                      <h4 className="font-bold text-sm text-slate-900 mt-0.5">{evt.title}</h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-white text-slate-700 font-mono text-[10px] font-bold border border-slate-200">
+                      CALENDAR BLOCK
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-white text-slate-700 font-mono text-[10px] font-bold border border-slate-200">
-                    CALENDAR BLOCK
-                  </span>
+                ))
+              ) : (
+                <div className="py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                  No scheduled blocks today.
                 </div>
-              ))}
+              )}
             </div>
           )}
 
           {viewMode === 'Week' && (
             <div className="grid grid-cols-1 md:grid-cols-7 gap-3 text-xs">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
-                <div key={day} className={`p-3 rounded-xl border ${idx === 6 ? 'bg-blue-50/50 border-primary' : 'bg-slate-50 border-slate-200'} space-y-2`}>
+                <div key={day} className={`p-3 rounded-xl border ${idx === 0 ? 'bg-blue-50/50 border-primary' : 'bg-slate-50 border-slate-200'} space-y-2`}>
                   <div className="flex items-center justify-between font-bold">
                     <span>{day}</span>
-                    <span className="font-mono text-[10px] text-slate-400">Sept {21 + idx}</span>
                   </div>
                   <div className="p-2 rounded bg-white border border-slate-200 shadow-2xs space-y-1">
-                    <span className="text-[10px] font-bold text-slate-800 block">Deep Work</span>
-                    <span className="text-[10px] font-mono text-primary block">2h focus</span>
+                    <span className="text-[10px] font-bold text-slate-800 block">Focus Session</span>
+                    <span className="text-[10px] font-mono text-primary block">Ready</span>
                   </div>
                 </div>
               ))}
@@ -622,13 +584,7 @@ export default function PlannerPage() {
               {Array.from({ length: 30 }).map((_, i) => (
                 <div
                   key={i}
-                  className={`p-2.5 rounded-lg border text-xs font-semibold ${
-                    i === 26
-                      ? 'bg-primary text-white border-primary'
-                      : i % 4 === 0
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                      : 'bg-white border-slate-100 text-slate-700 hover:bg-slate-50'
-                  }`}
+                  className="p-2.5 rounded-lg border text-xs font-semibold bg-white border-slate-100 text-slate-700 hover:bg-slate-50"
                 >
                   <span className="font-mono">{i + 1}</span>
                 </div>
@@ -672,76 +628,94 @@ export default function PlannerPage() {
           </div>
 
           <div className="space-y-2">
-            {filteredTasks.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => toggleTask(t.id)}
-                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 h-5 rounded flex items-center justify-center ${
-                      t.status === 'completed' ? 'bg-emerald-500 text-white' : 'border border-slate-300'
-                    }`}
-                  >
-                    {t.status === 'completed' && <Check className="w-3.5 h-3.5" />}
+            {filteredTasks.length > 0 ? (
+              filteredTasks.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => toggleTask(t.id)}
+                  className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded flex items-center justify-center ${
+                        t.status === 'completed' ? 'bg-emerald-500 text-white' : 'border border-slate-300'
+                      }`}
+                    >
+                      {t.status === 'completed' && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                    <div>
+                      <h4 className={`text-xs font-semibold ${t.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                        {t.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-500">{t.subtitle}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className={`text-xs font-semibold ${t.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                      {t.title}
-                    </h4>
-                    <p className="text-[11px] text-slate-500">{t.subtitle}</p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-slate-100 font-mono text-[10px] text-slate-700">{t.tag}</span>
-                  <span className="font-mono text-xs text-slate-400">{t.duration}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => deleteTask(t.id, e)}
-                    className="p-1 rounded text-slate-400 hover:text-red-500 ml-2"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 font-mono text-[10px] text-slate-700">{t.tag}</span>
+                    <span className="font-mono text-xs text-slate-400">{t.duration}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => deleteTask(t.id, e)}
+                      className="p-1 rounded text-slate-400 hover:text-red-500 ml-2"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                No tasks matching criteria.
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
 
       {/* VIEW 4: GOALS TAB */}
       {activeTab === 'Goals' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {initialGoals.map((g) => (
-            <div key={g.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
-                    {g.category}
-                  </span>
-                  <h3 className="font-bold text-base text-slate-900 mt-1">{g.title}</h3>
-                  <p className="text-xs text-slate-400">Target Date: {g.targetDate}</p>
-                </div>
-                <span className="text-2xl font-bold font-mono text-primary">{g.progress}%</span>
-              </div>
-
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${g.progress}%` }}></div>
-              </div>
-
-              <div className="space-y-2 pt-2 text-xs">
-                <h4 className="font-bold text-slate-800">Key Results Checklist:</h4>
-                {g.keyResults.map((kr, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-slate-600">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>{kr}</span>
+        <div className="space-y-4">
+          {goals.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {goals.map((g) => (
+                <div key={g.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-card space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-primary font-mono text-[10px] font-bold">
+                        {g.category}
+                      </span>
+                      <h3 className="font-bold text-base text-slate-900 mt-1">{g.title}</h3>
+                      <p className="text-xs text-slate-400">Target Date: {g.targetDate}</p>
+                    </div>
+                    <span className="text-2xl font-bold font-mono text-primary">{g.progress}%</span>
                   </div>
-                ))}
-              </div>
+
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${g.progress}%` }}></div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 text-xs">
+                    <h4 className="font-bold text-slate-800">Key Results Checklist:</h4>
+                    {g.keyResults.map((kr, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span>{kr}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="py-16 text-center bg-white rounded-xl border border-dashed border-slate-200 p-8 space-y-3">
+              <Target className="w-10 h-10 text-slate-300 mx-auto" />
+              <h3 className="font-bold text-sm text-slate-800">No Target Goals Defined</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Set milestones for your career transitions, such as target total compensation, technical round pass rates, or skill acquisitions.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -754,36 +728,42 @@ export default function PlannerPage() {
           </div>
 
           <div className="space-y-3">
-            {habits.map((h) => (
-              <div key={h.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold font-mono text-xs">
-                    <Flame className="w-4 h-4" />
+            {habits.length > 0 ? (
+              habits.map((h) => (
+                <div key={h.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold font-mono text-xs">
+                      <Flame className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">{h.name}</h4>
+                      <span className="text-[11px] font-mono text-emerald-600 font-bold">{h.streak} Day Streak 🔥</span>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xs text-slate-900">{h.name}</h4>
-                    <span className="text-[11px] font-mono text-emerald-600 font-bold">{h.streak} Day Streak 🔥</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLabel, dIdx) => (
-                    <button
-                      key={dIdx}
-                      type="button"
-                      onClick={() => toggleHabitDay(h.id, dIdx)}
-                      className={`w-7 h-7 rounded-lg font-mono text-xs font-bold transition-all flex items-center justify-center ${
-                        h.days[dIdx]
-                          ? 'bg-emerald-500 text-white shadow-2xs'
-                          : 'bg-white border border-slate-200 text-slate-400 hover:border-slate-400'
-                      }`}
-                    >
-                      {dayLabel}
-                    </button>
-                  ))}
+                  <div className="flex items-center gap-2">
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLabel, dIdx) => (
+                      <button
+                        key={dIdx}
+                        type="button"
+                        onClick={() => toggleHabitDay(h.id, dIdx)}
+                        className={`w-7 h-7 rounded-lg font-mono text-xs font-bold transition-all flex items-center justify-center ${
+                          h.days[dIdx]
+                            ? 'bg-emerald-500 text-white shadow-2xs'
+                            : 'bg-white border border-slate-200 text-slate-400 hover:border-slate-400'
+                        }`}
+                      >
+                        {dayLabel}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                No daily habits logged. Create recurring discipline streaks.
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

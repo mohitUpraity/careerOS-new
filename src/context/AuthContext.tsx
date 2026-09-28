@@ -19,29 +19,45 @@ export interface SupabaseUserProfile {
   profile_completeness: number;
   overall_readiness: number;
   onboarding_completed?: boolean;
+  location?: string;
+  bio?: string;
+  phone?: string;
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
+  target_role?: string;
+  currency?: string;
+  min_salary?: number;
+  target_tc?: number;
   created_at?: string;
 }
 
 interface AuthContextType {
   firebaseUser: User | null;
   userProfile: SupabaseUserProfile | null;
+  user: User | null;
+  profile: SupabaseUserProfile | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, pass: string) => Promise<void>;
   signUpWithEmail: (email: string, pass: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (data: Partial<SupabaseUserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   firebaseUser: null,
   userProfile: null,
+  user: null,
+  profile: null,
   loading: true,
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
   logout: async () => {},
   refreshProfile: async () => {},
+  updateProfile: async () => {},
 });
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
@@ -72,9 +88,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data: SupabaseUserProfile = await res.json();
         setUserProfile(data);
+      } else {
+        setUserProfile({
+          id: fbUser.uid,
+          email: fbUser.email || "",
+          name: fbUser.displayName || fbUser.email?.split("@")[0] || "Engineer",
+          avatar_url: fbUser.photoURL || undefined,
+          profile_completeness: 20,
+          overall_readiness: 40,
+          onboarding_completed: false,
+        });
       }
     } catch (err) {
-      console.error("Failed to sync user with Supabase PostgreSQL:", err);
+      console.warn("Using offline candidate profile fallback for Supabase:", err);
+      setUserProfile({
+        id: fbUser.uid,
+        email: fbUser.email || "",
+        name: fbUser.displayName || fbUser.email?.split("@")[0] || "Engineer",
+        avatar_url: fbUser.photoURL || undefined,
+        profile_completeness: 20,
+        overall_readiness: 40,
+        onboarding_completed: false,
+      });
     }
   };
 
@@ -159,17 +194,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: Partial<SupabaseUserProfile>) => {
+    if (userProfile) {
+      setUserProfile({ ...userProfile, ...data });
+    }
+    if (firebaseUser) {
+      try {
+        const token = await firebaseUser.getIdToken();
+        await fetch(`${API_BASE}/profile`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        });
+      } catch (e) {
+        console.error("Profile persist note:", e);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         firebaseUser,
         userProfile,
+        user: firebaseUser,
+        profile: userProfile,
         loading,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
         logout,
         refreshProfile,
+        updateProfile,
       }}
     >
       {children}

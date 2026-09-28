@@ -22,13 +22,17 @@ import {
   Send,
 } from 'lucide-react';
 import { mockInterviewSession } from '@/data/mock/interviewData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function InterviewArenaPage() {
+  const { user, profile } = useAuth();
   const [isMicOn, setIsMicOn] = useState(true);
   const [activeCanvasTab, setActiveCanvasTab] = useState<'schematic' | 'code' | 'benchmarks'>('schematic');
   const [transcript, setTranscript] = useState(mockInterviewSession.transcript);
   const [inputSpeech, setInputSpeech] = useState('');
   const [toast, setToast] = useState<string | null>(null);
+
+  const displayName = profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Candidate';
 
   const triggerToast = (msg: string) => {
     setToast(msg);
@@ -42,8 +46,8 @@ export default function InterviewArenaPage() {
     const newTurn = {
       id: `tr_${Date.now()}`,
       speaker: 'CANDIDATE' as const,
-      speakerName: 'Mohit Upraity (Candidate)',
-      timestamp: '22:30',
+      speakerName: `${displayName} (Candidate)`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: inputSpeech,
       chips: [{ label: '+Dynamic Concept: Live Evaluation Active', type: 'positive' as const }],
     };
@@ -174,13 +178,13 @@ export default function InterviewArenaPage() {
                 <div
                   key={item.id}
                   className={`p-3.5 rounded-xl text-xs space-y-2 ${
-                    item.speaker === 'AI'
+                    item.speaker === 'INTERVIEWER'
                       ? 'bg-blue-50/70 border border-blue-100 text-slate-900'
                       : 'bg-slate-50 border border-slate-200 text-slate-900 ml-4'
                   }`}
                 >
                   <div className="flex items-center justify-between font-mono text-[11px]">
-                    <span className={`font-bold ${item.speaker === 'AI' ? 'text-primary' : 'text-slate-700'}`}>
+                    <span className={`font-bold ${item.speaker === 'INTERVIEWER' ? 'text-primary' : 'text-slate-700'}`}>
                       {item.speakerName}
                     </span>
                     <span className="text-slate-400">{item.timestamp}</span>

@@ -7,10 +7,10 @@ import SidebarNav from "./SidebarNav";
 import TopCommandBar from "./TopCommandBar";
 import LandingPage from "@/components/landing/LandingPage";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { ShieldAlert, Sparkles, Lock, ArrowRight, LogIn } from "lucide-react";
+import { Sparkles, Lock, LogIn } from "lucide-react";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { firebaseUser, userProfile, loading } = useAuth();
+  const { firebaseUser, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -29,7 +29,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           INITIALIZING CAREEROS ENGINE...
         </p>
         <span className="mt-2 font-mono text-xs text-slate-500">
-          Syncing Supabase PostgreSQL & Firebase Auth
+          Syncing Supabase PostgreSQL &amp; Firebase Auth
         </span>
       </div>
     );
@@ -89,14 +89,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 4. Mandatory Onboarding Enforcement: If user is authenticated and onboarding is not completed, enforce /onboarding
-  React.useEffect(() => {
-    if (firebaseUser && userProfile && userProfile.onboarding_completed === false && pathname !== "/onboarding") {
-      router.push("/onboarding");
-    }
-  }, [firebaseUser, userProfile, pathname, router]);
-
-  // 5. Onboarding Route -> Full-Width Dedicated Engine Setup Canvas (No Sidebar/TopBar)
+  // 4. Onboarding Route (Optional Setup Canvas)
   if (pathname === "/onboarding") {
     return (
       <div className="bg-[#f8f9ff] text-slate-900 antialiased min-h-screen selection:bg-blue-100">
@@ -105,24 +98,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 6. If user is authenticated but onboarding is not completed yet, show setup gate while redirecting
-  if (firebaseUser && userProfile && userProfile.onboarding_completed === false) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white select-none">
-        <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/40 animate-pulse">
-          <Sparkles className="w-7 h-7 text-white" />
-        </div>
-        <p className="mt-5 font-mono text-sm tracking-wider text-slate-200">
-          PROVISIONING YOUR CANDIDATE PROFILE...
-        </p>
-        <span className="mt-1.5 font-mono text-xs text-slate-400">
-          Routing to Mandatory CareerOS Engine Setup
-        </span>
-      </div>
-    );
-  }
-
-  // 7. Authenticated & Onboarded User Workspace Shell with Sidebar & Top Command Bar
+  // 5. Authenticated User Workspace Shell with Sidebar & Top Command Bar
   return (
     <div className="bg-surface text-on-surface antialiased min-h-screen">
       {/* Left Persistent Navigation Rail (240px) */}

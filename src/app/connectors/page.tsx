@@ -132,19 +132,15 @@ export default function ConnectorsPage() {
     const newConnector: EvidenceConnector = {
       id: `conn_${Date.now()}`,
       name: providerNameMap[selectedProvider] || selectedProvider,
-      provider: selectedProvider as any,
       category: 'Code & Repositories',
+      iconType: selectedProvider,
+      description: 'Ingesting technical commits, benchmarks, and portfolio proof items.',
       status: 'connected',
       lastSyncedAt: 'Just now',
+      verifiedItemsCount: 1,
       accountHandle: accountHandle.startsWith('@') ? accountHandle : `@${accountHandle}`,
-      avatarUrl: 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=120&auto=format&fit=crop&q=80',
-      metrics: [
-        { label: 'Artifacts Synced', value: '12' },
-        { label: 'Verified Proofs', value: '4' },
-      ],
-      extractedEvidenceCount: 4,
-      syncFrequency: 'Real-time Webhook',
-      description: 'Ingesting technical commits, benchmarks, and portfolio proof items.',
+      authMethod: 'PAT_TOKEN',
+      telemetryStream: `${selectedProvider}.events.v1`,
     };
 
     setConnectors([newConnector, ...connectors]);
@@ -159,7 +155,7 @@ export default function ConnectorsPage() {
   );
 
   const totalConnected = connectors.filter((c) => c.status === 'connected').length;
-  const totalEvidenceExtracted = connectors.reduce((acc, c) => acc + c.extractedEvidenceCount, 0);
+  const totalEvidenceExtracted = connectors.reduce((acc, c) => acc + (c.verifiedItemsCount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -284,13 +280,13 @@ export default function ConnectorsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center font-bold text-slate-800 text-sm overflow-hidden">
-                      {c.provider === 'github' && <Github className="w-5 h-5 text-slate-900" />}
-                      {c.provider === 'leetcode' && <Code2 className="w-5 h-5 text-amber-600" />}
-                      {c.provider === 'linkedin' && <Share2 className="w-5 h-5 text-blue-600" />}
-                      {c.provider === 'huggingface' && <Sparkles className="w-5 h-5 text-amber-500" />}
-                      {c.provider === 'kaggle' && <span className="font-mono text-blue-500 font-extrabold text-sm">K</span>}
-                      {c.provider === 'medium' && <span className="font-serif font-black text-slate-900 text-base">M</span>}
-                      {c.provider === 'codeforces' && <Code2 className="w-5 h-5 text-red-600" />}
+                      {c.iconType === 'github' && <Github className="w-5 h-5 text-slate-900" />}
+                      {c.iconType === 'leetcode' && <Code2 className="w-5 h-5 text-amber-600" />}
+                      {c.iconType === 'linkedin' && <Share2 className="w-5 h-5 text-blue-600" />}
+                      {c.iconType === 'huggingface' && <Sparkles className="w-5 h-5 text-amber-500" />}
+                      {c.iconType === 'kaggle' && <span className="font-mono text-blue-500 font-extrabold text-sm">K</span>}
+                      {c.iconType === 'medium' && <span className="font-serif font-black text-slate-900 text-base">M</span>}
+                      {c.iconType === 'codeforces' && <Code2 className="w-5 h-5 text-red-600" />}
                     </div>
                     <div>
                       <h3 className="font-bold text-sm text-slate-900 leading-tight">{c.name}</h3>
@@ -320,12 +316,14 @@ export default function ConnectorsPage() {
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
-                  {c.metrics.map((m, i) => (
-                    <div key={i} className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                      <span className="text-[10px] text-slate-400 block font-medium">{m.label}</span>
-                      <span className="text-xs font-bold font-mono text-slate-900 mt-0.5 block">{m.value}</span>
-                    </div>
-                  ))}
+                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block font-medium">Verified Proofs</span>
+                    <span className="text-xs font-bold font-mono text-slate-900 mt-0.5 block">{c.verifiedItemsCount}</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block font-medium">Auth Method</span>
+                    <span className="text-xs font-bold font-mono text-primary mt-0.5 block">{c.authMethod}</span>
+                  </div>
                 </div>
               </div>
 
@@ -410,7 +408,7 @@ export default function ConnectorsPage() {
 
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {item.skillsAssociated.map((skill) => (
+                    {(item.skillsAssociated || item.mappedSkills || []).map((skill) => (
                       <span
                         key={skill}
                         className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-semibold"
