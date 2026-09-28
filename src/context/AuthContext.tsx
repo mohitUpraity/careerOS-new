@@ -18,6 +18,7 @@ export interface SupabaseUserProfile {
   avatar_url?: string;
   profile_completeness: number;
   overall_readiness: number;
+  onboarding_completed?: boolean;
   created_at?: string;
 }
 

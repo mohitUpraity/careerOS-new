@@ -32,6 +32,16 @@ class CommitProfileRequest(BaseModel):
     experiences: Optional[List[Dict[str, Any]]] = []
     skills: List[Dict[str, Any]]
     evidence_items: List[Dict[str, Any]]
+    
+    # User calibration preferences
+    seniority_level: Optional[str] = "IC6"
+    discipline: Optional[str] = "ai_sys"
+    min_salary: Optional[int] = 225000
+    target_tc: Optional[int] = 520000
+    currency: Optional[str] = "USD"
+    modalities: Optional[List[str]] = ["remote", "hybrid"]
+    relocation_open: Optional[bool] = True
+    leetcode_handle: Optional[str] = ""
 
 @router.post("/parse-resume-file")
 async def parse_resume_file(
@@ -110,8 +120,17 @@ async def commit_onboarding_profile(
             profile.github = payload.github or profile.github
             profile.linkedin = payload.linkedin or profile.linkedin
             profile.target_roles = payload.target_roles
+            profile.seniority_level = payload.seniority_level or profile.seniority_level
+            profile.discipline = payload.discipline or profile.discipline
+            profile.min_salary = payload.min_salary or profile.min_salary
+            profile.target_tc = payload.target_tc or profile.target_tc
+            profile.currency = payload.currency or profile.currency
+            profile.modalities = payload.modalities or profile.modalities
+            profile.relocation_open = payload.relocation_open if payload.relocation_open is not None else profile.relocation_open
+            profile.leetcode_handle = payload.leetcode_handle or profile.leetcode_handle
             profile.profile_completeness = 100
             profile.overall_readiness = 94
+            profile.onboarding_completed = True
         else:
             profile = UserProfileModel(
                 id=user_id,
@@ -123,8 +142,17 @@ async def commit_onboarding_profile(
                 linkedin=payload.linkedin or "https://linkedin.com",
                 manifesto=payload.manifesto,
                 target_roles=payload.target_roles,
+                seniority_level=payload.seniority_level or "IC6",
+                discipline=payload.discipline or "ai_sys",
+                min_salary=payload.min_salary or 225000,
+                target_tc=payload.target_tc or 520000,
+                currency=payload.currency or "USD",
+                modalities=payload.modalities or ["remote", "hybrid"],
+                relocation_open=payload.relocation_open if payload.relocation_open is not None else True,
+                leetcode_handle=payload.leetcode_handle or "",
                 profile_completeness=100,
-                overall_readiness=94
+                overall_readiness=94,
+                onboarding_completed=True
             )
             db.add(profile)
 

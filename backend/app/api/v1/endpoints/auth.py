@@ -23,8 +23,9 @@ class UserAuthResponse(BaseModel):
     email: str
     name: str
     avatar_url: Optional[str] = None
-    profile_completeness: int = 90
-    overall_readiness: int = 85
+    profile_completeness: int = 20
+    overall_readiness: int = 40
+    onboarding_completed: bool = False
     created_at: datetime
 
     class Config:
@@ -68,11 +69,14 @@ async def sync_firebase_user(
                 id=payload.uid,
                 name=payload.name or "Engineer",
                 email=payload.email,
+                onboarding_completed=False,
+                profile_completeness=20,
+                overall_readiness=40,
             )
             db.add(profile)
         else:
             profile.email = payload.email
-            if payload.name:
+            if payload.name and profile.name == "Engineer":
                 profile.name = payload.name
 
         await db.commit()
@@ -86,6 +90,7 @@ async def sync_firebase_user(
             avatar_url=user.avatar_url,
             profile_completeness=profile.profile_completeness,
             overall_readiness=profile.overall_readiness,
+            onboarding_completed=getattr(profile, "onboarding_completed", False),
             created_at=user.created_at,
         )
     except Exception as err:
@@ -102,8 +107,9 @@ async def sync_firebase_user(
                 email=user.email,
                 name=user.name,
                 avatar_url=user.avatar_url,
-                profile_completeness=profile.profile_completeness if profile else 90,
-                overall_readiness=profile.overall_readiness if profile else 85,
+                profile_completeness=profile.profile_completeness if profile else 20,
+                overall_readiness=profile.overall_readiness if profile else 40,
+                onboarding_completed=getattr(profile, "onboarding_completed", False) if profile else False,
                 created_at=user.created_at,
             )
         raise HTTPException(
@@ -122,8 +128,9 @@ async def get_my_info(
     prof_res = await db.execute(select(UserProfileModel).filter(UserProfileModel.id == current_user.id))
     profile = prof_res.scalars().first()
     
-    completeness = profile.profile_completeness if profile else 90
-    readiness = profile.overall_readiness if profile else 85
+    completeness = profile.profile_completeness if profile else 20
+    readiness = profile.overall_readiness if profile else 40
+    onboarded = getattr(profile, "onboarding_completed", False) if profile else False
 
     return UserAuthResponse(
         id=current_user.id,
@@ -132,5 +139,6 @@ async def get_my_info(
         avatar_url=current_user.avatar_url,
         profile_completeness=completeness,
         overall_readiness=readiness,
+        onboarding_completed=onboarded,
         created_at=current_user.created_at,
     )

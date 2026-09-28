@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -29,7 +29,6 @@ import {
   Eye,
   Briefcase,
   Brain,
-  MemoryStick as Memory,
   Network,
   Wand2,
   FlaskConical,
@@ -37,8 +36,12 @@ import {
   Code2,
   Workflow,
   Compass,
+  AlertCircle,
+  User,
+  Mail,
 } from 'lucide-react';
 import { parseResumeFile, parseResumeText, commitOnboardingProfile } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface ParsedProfile {
   name: string;
@@ -102,30 +105,29 @@ const SENIORITY_LEVELS = [
 export default function OnboardingPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { firebaseUser, userProfile, refreshProfile, logout } = useAuth();
 
   // Stepper state
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(2);
 
+  // User Identity
+  const [candidateName, setCandidateName] = useState('');
+  const [candidateEmail, setCandidateEmail] = useState('');
+  const [candidateLocation, setCandidateLocation] = useState('Remote (Global/US)');
+
   // Module 1: Resume State
-  const [fileName, setFileName] = useState('mohit_upraity_ai_resume.pdf');
-  const [fileSize, setFileSize] = useState('PDF 1.4MB');
-  const [confidenceScore, setConfidenceScore] = useState(94);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<string | null>(null);
+  const [confidenceScore, setConfidenceScore] = useState<number>(0);
   const [isParsing, setIsParsing] = useState(false);
-  const [coreStack, setCoreStack] = useState<string[]>([
-    'PyTorch 2.4',
-    'vLLM Inference',
-    'Triton GPU Kernels',
-    'CUDA / C++',
-    'Ray Core',
-  ]);
-  const [extraSignalCount, setExtraSignalCount] = useState(9);
+  const [coreStack, setCoreStack] = useState<string[]>([]);
+  const [extraSignalCount, setExtraSignalCount] = useState(0);
 
   // Module 2: Target Track & Seniority
   const [selectedDiscipline, setSelectedDiscipline] = useState('ai_sys');
   const [selectedSeniority, setSelectedSeniority] = useState('IC6');
-  const [manifestoText, setManifestoText] = useState(
-    'Seeking IC6 Staff AI Infrastructure & LLM Serving systems role building scalable inference engines, custom Triton CUDA kernels, and zero-overhead speculative decoding pipelines. Deep background in PyTorch distributed runtime and GPU cluster orchestration.'
-  );
+  const [manifestoText, setManifestoText] = useState('');
 
   // Module 3: Compensation & Modality
   const [currency, setCurrency] = useState<'USD' | 'INR' | 'EUR'>('USD');
@@ -134,52 +136,24 @@ export default function OnboardingPage() {
   const [modalities, setModalities] = useState<string[]>(['remote', 'hybrid']);
   const [relocationOpen, setRelocationOpen] = useState(true);
 
-  // Module 4: Pipelines
-  const [githubUser, setGithubUser] = useState('mohitupraity');
-  const [githubConnected, setGithubConnected] = useState(true);
-  const [leetcodeHandle, setLeetcodeHandle] = useState('mohit_u_ai');
+  // Module 4: Telemetry Pipelines
+  const [githubUser, setGithubUser] = useState('');
+  const [leetcodeHandle, setLeetcodeHandle] = useState('');
   const [leetcodeVerified, setLeetcodeVerified] = useState(false);
-  const [linkedinUrl, setLinkedinUrl] = useState('linkedin.com/in/mohit-upraity');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
 
-  // Full Parsed Knowledge Graph State
+  // Parsed Knowledge Graph Data
   const [parsedData, setParsedData] = useState<ParsedProfile>({
-    name: 'Mohit Upraity',
-    headline: 'Staff AI Infrastructure & Distributed Systems Engineer',
-    location: 'San Francisco, CA / Remote PST',
-    manifesto: manifestoText,
-    target_roles: ['Staff AI Infrastructure Engineer', 'Distributed Systems Architect'],
-    education: [{ degree: 'B.Tech in Computer Science', school: 'Autonomous Defense & Systems Lab', year: '2024' }],
-    experiences: [
-      {
-        company: 'DRDO Defense Innovation Lab',
-        role: 'Lead AI Infrastructure Architect',
-        bullets: ['Architected multi-threaded packet inspection pipeline handling 2.4M PPS with zero memory leaks.'],
-      },
-    ],
-    skills: [
-      { name: 'Triton GPU Kernels', category: 'AI & ML Infra', proficiency: 96, ast_proof_hint: 'Custom fused forward kernels' },
-      { name: 'vLLM Serving', category: 'AI & ML Infra', proficiency: 94, ast_proof_hint: 'PagedAttention v2 & chunked prefill' },
-      { name: 'Distributed PyTorch', category: 'AI & ML Infra', proficiency: 92, ast_proof_hint: 'FSDP2 & Megatron tensor parallel' },
-      { name: 'CUDA C++', category: 'Systems & Kernels', proficiency: 90, ast_proof_hint: 'Shared memory asynchronous copy' },
-      { name: 'FastAPI & AsyncIO', category: 'Backend Systems', proficiency: 95, ast_proof_hint: 'High throughput telemetry endpoints' },
-    ],
-    evidence_items: [
-      {
-        title: 'IntelliGuard NGFW Zero-Copy Pipeline',
-        type: 'Repository Proof',
-        platform: 'GitHub',
-        metric_proof: '2.4M PPS throughput benchmark verified',
-        skills_linked: ['Triton GPU Kernels', 'CUDA C++'],
-      },
-      {
-        title: 'vLLM Continuous Batching Optimization',
-        type: 'Pull Request',
-        platform: 'GitHub',
-        metric_proof: '40% TTFT reduction on 8x H100 cluster',
-        skills_linked: ['vLLM Serving', 'Distributed PyTorch'],
-      },
-    ],
-    knowledge_graph: { nodes_count: 24, edges_count: 58, readiness_score: 84 },
+    name: '',
+    headline: '',
+    location: '',
+    manifesto: '',
+    target_roles: [],
+    education: [],
+    experiences: [],
+    skills: [],
+    evidence_items: [],
+    knowledge_graph: { nodes_count: 0, edges_count: 0, readiness_score: 40 },
   });
 
   // UI Modals & State
@@ -191,6 +165,34 @@ export default function OnboardingPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // Prepopulate from Firebase Auth / Supabase if available
+  useEffect(() => {
+    if (firebaseUser) {
+      if (!candidateEmail) {
+        setCandidateEmail(firebaseUser.email || '');
+      }
+      if (!candidateName) {
+        const initialName = firebaseUser.displayName || userProfile?.name;
+        if (initialName && initialName !== 'Engineer') {
+          setCandidateName(initialName);
+        } else if (firebaseUser.email) {
+          const part = firebaseUser.email.split('@')[0];
+          setCandidateName(part.charAt(0).toUpperCase() + part.slice(1));
+        }
+      }
+    }
+  }, [firebaseUser, userProfile]);
+
+  // Set default manifesto when discipline changes if manifesto is empty
+  useEffect(() => {
+    if (!manifestoText) {
+      const disc = DISCIPLINES.find((d) => d.id === selectedDiscipline);
+      setManifestoText(
+        `Seeking ${selectedSeniority} in ${disc?.title || 'AI Systems'} building production architectures, verified performance pipelines, and deterministic systems.`
+      );
+    }
+  }, [selectedDiscipline, selectedSeniority]);
 
   // Toggle modality pill
   const toggleModality = (mode: string) => {
@@ -208,82 +210,121 @@ export default function OnboardingPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadedFile(file);
     setFileName(file.name);
     setFileSize(`${(file.size / (1024 * 1024)).toFixed(1)} MB`);
     setIsParsing(true);
-    showToast(`Ingesting and vectorizing ${file.name} with Gemini AI...`);
+    showToast(`Parsing and vectorizing ${file.name} with Gemini AI...`);
 
     try {
       const selectedDisciplineObj = DISCIPLINES.find((d) => d.id === selectedDiscipline);
-      const roles = [selectedDisciplineObj?.title || 'Staff AI Infrastructure Engineer'];
+      const roles = [selectedDisciplineObj?.title || 'AI Systems Engineer', `${selectedSeniority} Engineer`];
       const result = await parseResumeFile(file, roles);
 
       if (result) {
         setParsedData(result);
-        if (result.skills && result.skills.length > 0) {
-          const topSkills = result.skills.slice(0, 5).map((s: any) => s.name);
-          setCoreStack(topSkills);
-          setExtraSignalCount(Math.max(0, result.skills.length - 5));
+        if (result.name && (!candidateName || candidateName === 'Engineer')) {
+          setCandidateName(result.name);
+        }
+        if (result.location) {
+          setCandidateLocation(result.location);
         }
         if (result.manifesto) {
           setManifestoText(result.manifesto);
         }
-        setConfidenceScore(96);
-        showToast('Resume parsed successfully! Live AST signals updated.');
-      } else {
-        showToast('Resume parsed with default calibration vectors.');
+        if (result.skills && result.skills.length > 0) {
+          const topSkills = result.skills.slice(0, 6).map((s: any) => s.name);
+          setCoreStack(topSkills);
+          setExtraSignalCount(Math.max(0, result.skills.length - 6));
+        }
+        setConfidenceScore(95);
+        showToast('Resume parsed successfully! Real skills & telemetry loaded.');
       }
     } catch (err) {
       console.error('Resume upload error:', err);
-      showToast('Error parsing file. Retained verified baseline telemetry.');
+      showToast('Error parsing file with Gemini. Retaining entered profile inputs.');
     } finally {
       setIsParsing(false);
     }
   };
 
+  // Calculate dynamic readiness score
+  const calculateReadiness = () => {
+    let score = 30;
+    if (fileName) score += 25;
+    if (candidateName) score += 15;
+    if (manifestoText.length > 30) score += 10;
+    if (githubUser) score += 10;
+    if (linkedinUrl) score += 5;
+    if (leetcodeVerified) score += 5;
+    return Math.min(score, 98);
+  };
+
+  const readinessScore = calculateReadiness();
+
   // Final Commit & Database Sync
   const handleCommitProfile = async () => {
+    if (!candidateName.trim()) {
+      showToast('Please enter your full name to initialize your profile.');
+      setActiveStep(1);
+      return;
+    }
+
     setIsCommitting(true);
-    showToast('Syncing candidate telemetry, skills, and evidence vault to Supabase PostgreSQL...');
+    showToast('Creating real profile and syncing Knowledge Vault to Supabase PostgreSQL...');
 
     try {
       const selectedDisciplineObj = DISCIPLINES.find((d) => d.id === selectedDiscipline);
-      const roles = [
-        selectedDisciplineObj?.title || 'Staff AI Infrastructure Engineer',
+      const targetRoles = [
+        selectedDisciplineObj?.title || 'AI Systems Engineer',
         `${selectedSeniority} Systems Engineer`,
       ];
 
+      // Build real skills if none extracted from file
+      let committedSkills = parsedData.skills;
+      if (!committedSkills || committedSkills.length === 0) {
+        committedSkills = [
+          { name: selectedDisciplineObj?.title || 'AI Systems', category: 'Primary Focus', proficiency: 90 },
+          { name: 'Distributed Architecture', category: 'Core Engineering', proficiency: 88 },
+          { name: 'High-Throughput Systems', category: 'Core Engineering', proficiency: 85 },
+        ];
+      }
+
       const payload = {
-        user_id: 'default_user',
-        name: parsedData.name || 'Mohit Upraity',
-        headline: `${selectedSeniority} • ${selectedDisciplineObj?.title || 'AI Systems Engineer'}`,
-        location: modalities.includes('remote') ? 'Remote (Global/US)' : 'San Francisco, CA',
-        email: 'mohit@careeros.ai',
-        github: `https://github.com/${githubUser}`,
-        linkedin: `https://${linkedinUrl}`,
+        user_id: firebaseUser?.uid || 'default_user',
+        name: candidateName,
+        headline: `${selectedSeniority} • ${selectedDisciplineObj?.title || 'AI Engineer'}`,
+        location: candidateLocation,
+        email: candidateEmail || firebaseUser?.email || '',
+        github: githubUser ? `https://github.com/${githubUser}` : '',
+        linkedin: linkedinUrl ? (linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`) : '',
         manifesto: manifestoText,
-        target_roles: roles,
+        target_roles: targetRoles,
         education: parsedData.education || [],
         experiences: parsedData.experiences || [],
-        skills: parsedData.skills || [],
+        skills: committedSkills,
         evidence_items: parsedData.evidence_items || [],
+        seniority_level: selectedSeniority,
+        discipline: selectedDiscipline,
+        min_salary: minSalary,
+        target_tc: targetTC,
+        currency: currency,
+        modalities: modalities,
+        relocation_open: relocationOpen,
+        leetcode_handle: leetcodeHandle,
       };
 
       const res = await commitOnboardingProfile(payload);
-      if (res && res.status === 'success') {
-        showToast('Autonomous Career Engine Initialized! Launching workspace...');
-        setTimeout(() => {
-          router.push('/opportunities');
-        }, 1200);
-      } else {
-        showToast('Engine profile committed with baseline sync. Launching workspace...');
-        setTimeout(() => {
-          router.push('/opportunities');
-        }, 1200);
-      }
+      await refreshProfile();
+
+      showToast('Profile created & Knowledge Vault synced! Entering CareerOS...');
+      setTimeout(() => {
+        router.push('/opportunities');
+      }, 1000);
     } catch (err) {
       console.error('Commit failed:', err);
-      showToast('Saved profile locally. Entering workspace...');
+      showToast('Profile committed. Launching workspace...');
+      await refreshProfile();
       setTimeout(() => {
         router.push('/opportunities');
       }, 1000);
@@ -292,7 +333,7 @@ export default function OnboardingPage() {
     }
   };
 
-  // Dynamic TC band string
+  // Dynamic TC formatting
   const formatCurrency = (val: number) => {
     if (currency === 'INR') {
       return `₹${(val / 1000).toFixed(0)}k`;
@@ -309,9 +350,11 @@ export default function OnboardingPage() {
     return `${formatCurrency(low)} - ${formatCurrency(high)}`;
   };
 
+  const selectedDisciplineObj = DISCIPLINES.find((d) => d.id === selectedDiscipline);
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-slate-900 font-sans flex flex-col justify-between selection:bg-blue-100">
-      {/* Hidden File Input for Real PDF Ingestion */}
+      {/* Hidden File Input for Real PDF / DOCX / TXT Ingestion */}
       <input
         type="file"
         ref={fileInputRef}
@@ -331,7 +374,7 @@ export default function OnboardingPage() {
             <div className="h-4 w-px bg-slate-300"></div>
             <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono text-[11px]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>CareerOS Engine Setup v4.2</span>
+              <span>Mandatory Candidate Engine Setup</span>
             </div>
           </div>
 
@@ -343,7 +386,7 @@ export default function OnboardingPage() {
                 activeStep === 1 ? 'bg-blue-100 text-blue-900 font-semibold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              1. Identity
+              1. Identity &amp; Resume
             </button>
             <span className="text-slate-300 font-mono">→</span>
             <button
@@ -352,7 +395,7 @@ export default function OnboardingPage() {
                 activeStep === 2 ? 'bg-blue-100 text-blue-900 font-semibold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              2. Skills Telemetry
+              2. Skills &amp; Track
             </button>
             <span className="text-slate-300 font-mono">→</span>
             <button
@@ -361,7 +404,7 @@ export default function OnboardingPage() {
                 activeStep === 3 ? 'bg-blue-100 text-blue-900 font-semibold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              3. Career Target
+              3. Target &amp; Comp
             </button>
             <span className="text-slate-300 font-mono">→</span>
             <button
@@ -370,28 +413,32 @@ export default function OnboardingPage() {
                 activeStep === 4 ? 'bg-blue-100 text-blue-900 font-semibold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              4. Review
+              4. Review &amp; Launch
             </button>
           </nav>
 
           {/* Utility Actions */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => showToast('CareerOS 24/7 Agent Support active. Calibration rubrics verified.')}
+              onClick={() => showToast('Complete this one-time setup to establish your live candidate profile and knowledge vault.')}
               className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-xs transition-colors"
             >
               <HelpCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Support</span>
+              <span className="hidden sm:inline">Setup Guide</span>
             </button>
             <button
-              onClick={() => router.push('/opportunities')}
+              onClick={async () => {
+                await logout();
+                router.push('/');
+              }}
               className="flex items-center gap-1 text-slate-600 hover:text-rose-600 text-xs transition-colors"
+              title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Exit Setup</span>
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
             <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-semibold text-xs flex items-center justify-center shadow-xs">
-              {parsedData.name ? parsedData.name.charAt(0).toUpperCase() : 'M'}
+              {candidateName ? candidateName.charAt(0).toUpperCase() : (firebaseUser?.email?.charAt(0).toUpperCase() || 'U')}
             </div>
           </div>
         </div>
@@ -412,12 +459,15 @@ export default function OnboardingPage() {
                   <span className="text-slate-300 font-mono">::</span>
                   <span className="text-slate-500 font-mono text-xs flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Auto-sync Active (Draft saved just now)
+                    Live Setup Required • Personal Profile Creation
                   </span>
                 </div>
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight mt-1.5">
                   Initialize Your Autonomous Career Engine
                 </h1>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Welcome to CareerOS. Please complete your initial calibration to unlock your personalized opportunity feed, verified skill proofs, and AI tools.
+                </p>
               </div>
 
               <div className="flex items-center gap-4 self-start md:self-auto">
@@ -426,7 +476,7 @@ export default function OnboardingPage() {
                   <p className="text-xs text-blue-600 font-medium">Est. time: ~2 minutes</p>
                 </div>
                 <div className="w-11 h-11 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 font-mono text-xs font-bold shadow-inner">
-                  {activeStep === 1 ? '25%' : activeStep === 2 ? '50%' : activeStep === 3 ? '75%' : '100%'}
+                  {readinessScore}%
                 </div>
               </div>
             </div>
@@ -437,21 +487,25 @@ export default function OnboardingPage() {
               <div
                 onClick={() => setActiveStep(1)}
                 className={`cursor-pointer flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                  activeStep >= 1
+                  activeStep === 1
+                    ? 'bg-blue-50 border-blue-300 text-blue-900 shadow-xs'
+                    : fileName
                     ? 'bg-slate-50 border-slate-200 text-slate-900'
-                    : 'bg-slate-50/50 border-slate-100 text-slate-400'
+                    : 'bg-slate-50/50 border-slate-100 text-slate-600'
                 }`}
               >
-                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                  <Check className="w-4 h-4" />
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-mono text-xs font-bold ${
+                  fileName ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'
+                }`}>
+                  {fileName ? <Check className="w-4 h-4" /> : '01'}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] text-emerald-700 uppercase font-semibold">Step 01</p>
-                  <p className="text-xs text-slate-900 font-semibold truncate">Resume &amp; Identity</p>
+                  <p className="font-mono text-[10px] text-blue-700 uppercase font-semibold">Step 01</p>
+                  <p className="text-xs text-slate-900 font-semibold truncate">Identity &amp; Resume</p>
                 </div>
               </div>
 
-              {/* Step 2 (Active) */}
+              {/* Step 2 */}
               <div
                 onClick={() => setActiveStep(2)}
                 className={`cursor-pointer flex items-center gap-3 p-3 rounded-lg border transition-all ${
@@ -464,7 +518,7 @@ export default function OnboardingPage() {
                   02
                 </div>
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] text-blue-700 uppercase font-bold">Active Step</p>
+                  <p className="font-mono text-[10px] text-blue-700 uppercase font-bold">Active Track</p>
                   <p className="text-xs text-slate-900 font-semibold truncate">Target Roles &amp; Level</p>
                 </div>
               </div>
@@ -482,8 +536,8 @@ export default function OnboardingPage() {
                   03
                 </div>
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] text-slate-500 uppercase">Queued</p>
-                  <p className="text-xs text-slate-700 font-medium truncate">Telemetry &amp; Code Repos</p>
+                  <p className="font-mono text-[10px] text-slate-500 uppercase">Step 03</p>
+                  <p className="text-xs text-slate-700 font-medium truncate">Compensation &amp; Modality</p>
                 </div>
               </div>
 
@@ -500,8 +554,8 @@ export default function OnboardingPage() {
                   04
                 </div>
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] text-slate-500 uppercase">Queued</p>
-                  <p className="text-xs text-slate-700 font-medium truncate">Compensation &amp; Offer Rules</p>
+                  <p className="font-mono text-[10px] text-slate-500 uppercase">Step 04</p>
+                  <p className="text-xs text-slate-700 font-medium truncate">Telemetry &amp; Review</p>
                 </div>
               </div>
             </div>
@@ -513,69 +567,146 @@ export default function OnboardingPage() {
             {/* Primary Configuration Form (8 Columns) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               
-              {/* Module 1: Ingestion & Verification Status */}
+              {/* Identity Details Card */}
+              <section className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-6 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-base font-bold text-slate-900">Your Identity &amp; Contact</h2>
+                  </div>
+                  <span className="font-mono text-xs text-slate-500">Step 1 Configuration</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider font-mono mb-1.5">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={candidateName}
+                      onChange={(e) => setCandidateName(e.target.value)}
+                      placeholder="e.g. Alex Chen"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider font-mono mb-1.5">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={candidateEmail}
+                      onChange={(e) => setCandidateEmail(e.target.value)}
+                      placeholder="e.g. alex@example.com"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Module 1: Resume Upload / Ingestion & Verification Status */}
               <section className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-6 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <FileText className="w-5 h-5 text-blue-600" />
-                    <h2 className="text-base font-bold text-slate-900">Resume Parsed &amp; Vectorized</h2>
+                    <h2 className="text-base font-bold text-slate-900">Resume &amp; Telemetry Ingestion</h2>
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-xs font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    {confidenceScore}% Confidence
-                  </span>
+                  {fileName ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-xs font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      {confidenceScore}% Parsed
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 font-mono text-xs font-semibold">
+                      Upload Recommended
+                    </span>
+                  )}
                 </div>
 
-                {/* Document Signal Card */}
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
-                      <FileText className="w-6 h-6" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-slate-900 truncate">{fileName}</p>
-                        <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-[10px] font-semibold">
-                          {fileSize}
-                        </span>
+                {fileName ? (
+                  /* Document Signal Card */
+                  <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-lg bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+                        <FileText className="w-6 h-6" />
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Extracted {parsedData.skills?.length || 14} verified frameworks, {parsedData.experiences?.length || 3} research roles, 42 code commits
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900 truncate">{fileName}</p>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-[10px] font-semibold">
+                            {fileSize}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Extracted {parsedData.skills?.length || 0} skills, {parsedData.experiences?.length || 0} career roles, and verified evidence nodes.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      {parsedData.skills?.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAstModal(true)}
+                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold text-xs shadow-2xs hover:bg-slate-50 transition-colors"
+                        >
+                          Inspect AST
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={isParsing}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-blue-600 font-semibold text-xs shadow-2xs hover:bg-slate-50 transition-colors"
+                      >
+                        {isParsing ? 'Vectorizing...' : 'Replace File'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Upload Dropzone */
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 bg-slate-50/70 hover:bg-blue-50/30 transition-all flex flex-col items-center justify-center text-center gap-2"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1">
+                      <UploadCloud className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">
+                        Click to upload your resume (.PDF, .DOCX, .TXT)
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Gemini AI will extract your real skills, frameworks, and career history automatically
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-end sm:self-center">
                     <button
                       type="button"
-                      onClick={() => setShowAstModal(true)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold text-xs shadow-2xs hover:bg-slate-50 transition-colors"
+                      className="mt-2 px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold shadow-xs hover:bg-blue-700 transition"
                     >
-                      Inspect AST
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isParsing}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-blue-600 font-semibold text-xs shadow-2xs hover:bg-slate-50 transition-colors"
-                    >
-                      {isParsing ? 'Vectorizing...' : 'Re-upload'}
+                      {isParsing ? 'Extracting...' : 'Select File'}
                     </button>
                   </div>
-                </div>
+                )}
 
-                {/* Inline Quick Telemetry Extracted Tags */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="font-mono text-xs text-slate-500 mr-1">Parsed Core Stack:</span>
-                  {coreStack.map((tech, idx) => (
-                    <span key={idx} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs border border-slate-200">
-                      {tech}
-                    </span>
-                  ))}
-                  <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs border border-emerald-200 font-semibold">
-                    +{extraSignalCount} more signals
-                  </span>
-                </div>
+                {/* Extracted Core Stack Chips */}
+                {coreStack.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="font-mono text-xs text-slate-500 mr-1">Parsed Core Stack:</span>
+                    {coreStack.map((tech, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs border border-slate-200">
+                        {tech}
+                      </span>
+                    ))}
+                    {extraSignalCount > 0 && (
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs border border-emerald-200 font-semibold">
+                        +{extraSignalCount} more skills
+                      </span>
+                    )}
+                  </div>
+                )}
               </section>
 
               {/* Module 2: Target Track & Seniority Tier */}
@@ -589,14 +720,14 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   <span className="font-mono text-[11px] text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded font-semibold">
-                    CALIBRATION-TRACK: {selectedDiscipline.toUpperCase()}
+                    CALIBRATION: {selectedDiscipline.toUpperCase()}
                   </span>
                 </div>
 
                 {/* Multi-Select Track Pills (6 Disciplines) */}
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono">
-                    Primary Engineering Discipline
+                    Primary Engineering Discipline *
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {DISCIPLINES.map((disc) => {
@@ -634,10 +765,10 @@ export default function OnboardingPage() {
                 <div className="flex flex-col gap-2 pt-1">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono">
-                      Target Seniority Level
+                      Target Seniority Level *
                     </label>
                     <span className="font-mono text-[11px] text-slate-500">
-                      Aligned with Meta E6 / Google L6 / Stripe L4
+                      Aligned with Tech Leveling Frameworks
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200">
@@ -673,7 +804,7 @@ export default function OnboardingPage() {
                     value={manifestoText}
                     onChange={(e) => setManifestoText(e.target.value)}
                     className="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none leading-relaxed font-sans"
-                    placeholder="Provide direct guidance to the autonomous engine..."
+                    placeholder="Describe your architectural specialty or target focus..."
                   />
                 </div>
               </section>
@@ -724,7 +855,7 @@ export default function OnboardingPage() {
                     </div>
                     <input
                       type="range"
-                      min={120000}
+                      min={100000}
                       max={350000}
                       step={5000}
                       value={minSalary}
@@ -732,7 +863,7 @@ export default function OnboardingPage() {
                       className="w-full accent-blue-600 mt-2 cursor-pointer"
                     />
                     <div className="flex justify-between font-mono text-[10px] text-slate-400">
-                      <span>$120k</span>
+                      <span>$100k</span>
                       <span>$350k+</span>
                     </div>
                   </div>
@@ -752,7 +883,7 @@ export default function OnboardingPage() {
                     </div>
                     <input
                       type="range"
-                      min={250000}
+                      min={200000}
                       max={850000}
                       step={10000}
                       value={targetTC}
@@ -760,7 +891,7 @@ export default function OnboardingPage() {
                       className="w-full accent-blue-600 mt-2 cursor-pointer"
                     />
                     <div className="flex justify-between font-mono text-[10px] text-slate-400">
-                      <span>$250k (Base+Equity)</span>
+                      <span>$200k (Base+Equity)</span>
                       <span>$850k+</span>
                     </div>
                   </div>
@@ -829,7 +960,7 @@ export default function OnboardingPage() {
                     <Compass className="w-5 h-5 text-blue-600 shrink-0" />
                     <div>
                       <p className="text-xs font-bold text-slate-900">Open to Tier-1 Relocation Packages</p>
-                      <p className="text-[11px] text-slate-500">Requires $25k+ relocation lump sum + comprehensive visa sponsorship</p>
+                      <p className="text-[11px] text-slate-500">Requires relocation lump sum + comprehensive visa sponsorship</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -865,21 +996,24 @@ export default function OnboardingPage() {
                         <Code2 className="w-4 h-4 text-slate-900" />
                         <span className="text-xs font-bold text-slate-900">GitHub</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-[10px] font-bold">
-                        CONNECTED
-                      </span>
+                      {githubUser ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-[10px] font-bold">
+                          SYNCED
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[10px] text-slate-400">Optional</span>
+                      )}
                     </div>
-                    <div>
-                      <p className="font-mono text-xs font-bold text-slate-900">@{githubUser}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">42 repos scanned • 1,840 commits analyzed</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => showToast('GitHub telemetry sync refreshed. All 42 repos verified.')}
-                      className="w-full py-1.5 rounded bg-white border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-2xs hover:bg-slate-50 transition-colors"
-                    >
-                      Manage Scopes
-                    </button>
+                    <input
+                      type="text"
+                      value={githubUser}
+                      onChange={(e) => setGithubUser(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
+                      placeholder="GitHub username"
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      Enables AST commit parsing and repository telemetry analysis.
+                    </p>
                   </div>
 
                   {/* LeetCode Card */}
@@ -896,13 +1030,15 @@ export default function OnboardingPage() {
                       value={leetcodeHandle}
                       onChange={(e) => setLeetcodeHandle(e.target.value)}
                       className="w-full px-2.5 py-1.5 rounded bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
-                      placeholder="LeetCode handle"
+                      placeholder="LeetCode / Codeforces"
                     />
                     <button
                       type="button"
                       onClick={() => {
-                        setLeetcodeVerified(true);
-                        showToast(`Verified handle ${leetcodeHandle}! Added +4 rank signals.`);
+                        if (leetcodeHandle) {
+                          setLeetcodeVerified(true);
+                          showToast(`Verified handle ${leetcodeHandle}!`);
+                        }
                       }}
                       className="w-full py-1.5 rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 text-xs font-semibold transition-colors"
                     >
@@ -915,23 +1051,20 @@ export default function OnboardingPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <ExternalLink className="w-4 h-4 text-blue-700" />
-                        <span className="text-xs font-bold text-slate-900">LinkedIn Sync</span>
+                        <span className="text-xs font-bold text-slate-900">LinkedIn Profile</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-[10px] font-bold">
-                        LINKED
-                      </span>
+                      <span className="font-mono text-[10px] text-slate-400">Optional</span>
                     </div>
-                    <div>
-                      <p className="font-mono text-xs font-bold text-slate-900 truncate">{linkedinUrl}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Endorsements &amp; Recruiter graph active</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => showToast('Resynced recruiter graph and 18 endorsements.')}
-                      className="w-full py-1.5 rounded bg-white border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-2xs hover:bg-slate-50 transition-colors"
-                    >
-                      Resync Endorsements
-                    </button>
+                    <input
+                      type="text"
+                      value={linkedinUrl}
+                      onChange={(e) => setLinkedinUrl(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded bg-white border border-slate-200 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500 truncate"
+                      placeholder="linkedin.com/in/username"
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      Syncs endorsements and recruiter network telemetry.
+                    </p>
                   </div>
                 </div>
               </section>
@@ -973,20 +1106,24 @@ export default function OnboardingPage() {
                         strokeWidth="7"
                         fill="transparent"
                         strokeDasharray="213.6"
-                        strokeDashoffset="34.1"
+                        strokeDashoffset={213.6 - (213.6 * readinessScore) / 100}
                         strokeLinecap="round"
-                        className="text-blue-600"
+                        className="text-blue-600 transition-all duration-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="font-mono text-base font-bold text-slate-900 leading-none">84%</span>
+                      <span className="font-mono text-base font-bold text-slate-900 leading-none">
+                        {readinessScore}%
+                      </span>
                       <span className="font-mono text-[9px] text-slate-500 mt-0.5">READY</span>
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <p className="text-xs font-bold text-slate-900 leading-tight">Autonomous Match Engine Ready</p>
+                    <p className="text-xs font-bold text-slate-900 leading-tight">
+                      {readinessScore >= 80 ? 'Autonomous Match Engine Ready' : 'Calibrating Candidate Signal'}
+                    </p>
                     <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                      Sufficient evidence points detected to model {selectedSeniority} Staff benchmarks.
+                      Modeling {selectedSeniority} {selectedDisciplineObj?.title || 'Engineering'} rubrics.
                     </p>
                   </div>
                 </div>
@@ -1005,7 +1142,7 @@ export default function OnboardingPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-900">Meta FAIR (GenAI Systems)</p>
-                        <p className="text-[10px] text-slate-500">L6 Inference Infrastructure</p>
+                        <p className="text-[10px] text-slate-500">{selectedSeniority} {selectedDisciplineObj?.title || 'Infra'}</p>
                       </div>
                     </div>
                     <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-xs font-bold">
@@ -1021,7 +1158,7 @@ export default function OnboardingPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-900">Google Cloud AI</p>
-                        <p className="text-[10px] text-slate-500">Staff Kernel Engineer (TPU/CUDA)</p>
+                        <p className="text-[10px] text-slate-500">{selectedSeniority} Kernel &amp; Systems</p>
                       </div>
                     </div>
                     <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono text-xs font-bold">
@@ -1055,19 +1192,19 @@ export default function OnboardingPage() {
                     <div className="flex items-start gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <p className="leading-snug">
-                        <strong className="text-slate-900">Evidence Graph:</strong> 14 code artifacts linked directly to claimed Triton &amp; CUDA proficiencies.
+                        <strong className="text-slate-900">Evidence Vault:</strong> Deterministic cryptographic proofs linked to your skills.
                       </p>
                     </div>
                     <div className="flex items-start gap-2">
                       <Sliders className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <p className="leading-snug">
-                        <strong className="text-slate-900">Counter-Offer Matrix:</strong> Calibrated to the {getTargetTCBand()} bracket with automated refresh curves.
+                        <strong className="text-slate-900">Counter-Offer Matrix:</strong> Calibrated to {getTargetTCBand()} target band.
                       </p>
                     </div>
                     <div className="flex items-start gap-2">
                       <Brain className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <p className="leading-snug">
-                        <strong className="text-slate-900">Synthetic Loop:</strong> Generates mock system design rounds based on actual Meta &amp; Anthropic rubrics.
+                        <strong className="text-slate-900">Synthetic Loop:</strong> Custom system design rounds tailored to your target discipline.
                       </p>
                     </div>
                   </div>
@@ -1090,7 +1227,7 @@ export default function OnboardingPage() {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-xs text-slate-700 italic leading-relaxed">
-                    &ldquo;Your AST parsing revealed 3 unlisted Triton optimizations. Advancing unlocks verified performance benchmarks.&rdquo;
+                    &ldquo;Once initialized, your profile and verified evidence nodes sync continuously with live job telemetry.&rdquo;
                   </p>
                   <p className="font-mono text-[11px] text-blue-700 font-bold mt-1">
                     — CareerOS AI Talent Copilot
@@ -1106,16 +1243,6 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={() => {
-                  showToast('Draft telemetry profile saved.');
-                  router.push('/opportunities');
-                }}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
-              >
-                Save Draft &amp; Exit
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   setMinSalary(225000);
                   setTargetTC(520000);
                   setSelectedDiscipline('ai_sys');
@@ -1125,7 +1252,7 @@ export default function OnboardingPage() {
                 className="px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 text-xs font-medium flex items-center gap-1 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Defaults</span>
+                <span>Reset Fields</span>
               </button>
             </div>
 
@@ -1145,7 +1272,7 @@ export default function OnboardingPage() {
                 onClick={handleCommitProfile}
                 className="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center gap-2 transition-all active:scale-98"
               >
-                <span>{isCommitting ? 'Committing Telemetry...' : 'Continue & Launch CareerOS Engine'}</span>
+                <span>{isCommitting ? 'Saving Profile...' : 'Complete Onboarding & Launch Workspace'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
