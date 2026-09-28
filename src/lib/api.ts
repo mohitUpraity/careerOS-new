@@ -326,7 +326,22 @@ export async function generateAIPost(checkinText: string): Promise<string | null
   }
 }
 
-export async function tailorResumeWithAI(bullets: string[], targetJd: string): Promise<{ tailored_analysis: string; ats_estimated_score: number } | null> {
+export interface LiveResumeTailorResponse {
+  tailored_analysis?: string;
+  ats_estimated_score?: number;
+  tailored_bullets?: {
+    original?: string;
+    tailored?: string;
+    text?: string;
+    reason?: string;
+    impact_score?: string;
+  }[];
+}
+
+export async function tailorResumeWithAI(
+  bullets: string[],
+  targetJd: string
+): Promise<LiveResumeTailorResponse | null> {
   try {
     const res = await fetch(`${API_BASE}/ai/tailor-resume`, {
       method: 'POST',

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { X, Mail, Lock, User as UserIcon, Sparkles, ArrowRight, Github } from "lucide-react";
 
@@ -15,6 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   defaultMode = "signin",
 }) => {
+  const router = useRouter();
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">(defaultMode);
   const [name, setName] = useState("");
@@ -31,6 +33,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       await signInWithGoogle();
       onClose();
+      router.push("/onboarding");
     } catch (err: any) {
       setError(err?.message || "Google Authentication failed. Please try again.");
     } finally {
@@ -49,6 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         await signInWithEmail(email, password);
       }
       onClose();
+      router.push("/onboarding");
     } catch (err: any) {
       setError(err?.message || "Authentication failed. Check your credentials.");
     } finally {

@@ -89,7 +89,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 4. Authenticated User -> Full Workspace Shell with Sidebar & Top Command Bar
+  // 4. Onboarding Route -> Full-Width Dedicated Engine Setup Canvas (No Sidebar/TopBar)
+  if (pathname === "/onboarding") {
+    return (
+      <div className="bg-[#f8f9ff] text-slate-900 antialiased min-h-screen selection:bg-blue-100">
+        {children}
+      </div>
+    );
+  }
+
+  // 5. Authenticated User Workspace Shell with Sidebar & Top Command Bar
   return (
     <div className="bg-surface text-on-surface antialiased min-h-screen">
       {/* Left Persistent Navigation Rail (240px) */}
